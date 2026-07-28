@@ -200,14 +200,22 @@
   .mod-note{background:var(--amber-bg);color:#8a5c11;font-size:12px;padding:8px 10px;border-radius:7px;margin-top:8px;}
   .mod-actions{display:flex;gap:7px;margin-top:12px;flex-wrap:wrap;}
 
-  .notif-panel{position:absolute;top:34px;right:0;width:340px;background:#fff;border:1px solid var(--border);border-radius:10px;box-shadow:0 14px 30px rgba(0,0,0,.15);display:none;z-index:50;}
+  .notif-panel{position:absolute;top:34px;right:0;width:360px;background:#fff;border:1px solid var(--border);border-radius:10px;box-shadow:0 14px 30px rgba(0,0,0,.15);display:none;z-index:50;overflow:hidden;}
   .notif-panel.show{display:block;}
   .notif-head{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;font-weight:700;font-size:13px;}
   .notif-head .links{font-size:11px;font-weight:600;display:flex;gap:10px;}
-  .notif-item{padding:12px 16px;border-bottom:1px solid var(--border);font-size:12.5px;}
+  .notif-list{max-height:400px;overflow-y:auto;}
+  .notif-item{padding:12px 16px;border-bottom:1px solid var(--border);font-size:12.5px;border-left:3px solid transparent;transition:background .12s ease;}
   .notif-item:last-child{border-bottom:none;}
-  .notif-item .t{font-weight:700;margin-bottom:3px;}
+  .notif-item:hover{background:#f7f9fb;}
+  .notif-item.unread{background:#f4f9fd;}
+  .notif-item.nt-blue{border-left-color:var(--accent);}
+  .notif-item.nt-green{border-left-color:var(--green);}
+  .notif-item.nt-red{border-left-color:var(--red);}
+  .notif-item.nt-gray{border-left-color:#c7d0da;}
+  .notif-item .t{font-weight:700;margin-bottom:3px;display:flex;align-items:center;gap:6px;}
   .notif-item .d{color:var(--muted);font-size:11px;margin-top:4px;}
+  .unread-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);display:inline-block;flex-shrink:0;}
   .notif-actions{display:flex;gap:8px;margin-top:8px;}
 
   .autocomplete{position:relative;}
@@ -770,7 +778,7 @@ const SIDEBAR = [
   {group:'Kompetens', items:[
     {id:'utbildning', label:'Utbildning', icon:'◈'},
     {id:'rutiner', label:'Rutiner / Riktlinjer', icon:'▦'},
-    {id:'prov', label:'Prov & rättning', icon:'✓'},
+    {id:'prov', label:'Prov & rättning', icon:'✓', requireUtbildare:true},
   ]},
   {group:'Konto', items:[
     {id:'mitt-konto', label:'Mitt konto', icon:'◍'},
@@ -787,7 +795,7 @@ const SIDEBAR = [
 
 function renderTopHeader(){
   const me = currentUser();
-  const unread = DB.notiser.filter(n=>!n.lest).length;
+  const unread = DB.notiser.filter(n=>notisSynligForMig(n) && !n.lest).length;
   document.getElementById('topheader').innerHTML = `
     <div class="th-left">
       <img class="th-vgr-logo" src="${LOGO_VGR}" alt="Region Västra Götaland">
@@ -815,6 +823,7 @@ function renderSidebar(){
     if(g.adminOnly && !isAdmin()) return;
     html += `<div class="sb-group-label">${g.group}</div>`;
     g.items.forEach(it=>{
+      if(it.requireUtbildare && !isUtbildare()) return;
       const active = CURRENT_PAGE===it.id ? ' active':'';
       html += `<div class="sb-link${active}" onclick="route('${it.id}')"><span class="sbi">${it.icon||''}</span>${escapeHtml(it.label)}</div>`;
     });
@@ -832,9 +841,17 @@ function requireAdmin(){
   if(!isAdmin()){ toast('Du saknar adminbehörighet för detta.'); return false; }
   return true;
 }
-function pageAccessDenied(){
+function isUtbildare(){
+  const me = currentUser();
+  return isAdmin() || !!(me && me.behorigheter && me.behorigheter.Utbildare);
+}
+function requireUtbildare(){
+  if(!isUtbildare()){ toast('Du saknar utbildarbehörighet för detta.'); return false; }
+  return true;
+}
+function pageAccessDenied(msg){
   const adminKonton = DB.inloggadeKonton.filter(k=>DB.kontoAdmin[k]);
-  return `<div class="card pad"><div class="empty"><div class="big">🔒</div><b>Åtkomst nekad</b>Du behöver adminbehörighet för att se den här sidan.
+  return `<div class="card pad"><div class="empty"><div class="big">🔒</div><b>Åtkomst nekad</b>${msg||'Du behöver adminbehörighet för att se den här sidan.'}
     <div style="margin-top:12px;">${adminKonton.length? `Be något av dessa konton ge dig admin under Admin → Användare: ${adminKonton.map(k=>escapeHtml(k)).join(', ')}` : ''}</div>
   </div></div>`;
 }
@@ -867,29 +884,49 @@ function toggleNotif(e){
 }
 document.addEventListener('click', ()=>{ const p=document.getElementById('notifPanel'); if(p) p.classList.remove('show'); });
 
+function notisSynligForMig(n){ return !n.till || n.till===currentUser().id; }
+const NOTIF_META = {
+  provfraga:   {icon:'📝', cls:'nt-blue'},
+  provrattat_ok: {icon:'✅', cls:'nt-green'},
+  provrattat_ej: {icon:'❌', cls:'nt-red'},
+};
+function notifMetaFor(n){
+  if(n.typ==='provrattat') return NOTIF_META[n.titel && n.titel.indexOf('Ej godkänt')===0 ? 'provrattat_ej':'provrattat_ok'];
+  return NOTIF_META[n.typ] || {icon:'🔔', cls:'nt-gray'};
+}
 function renderNotifPanel(){
-  if(DB.notiser.length===0){
+  const mina = DB.notiser.filter(notisSynligForMig);
+  if(mina.length===0){
     return `<div class="notif-head">Notiser</div><div class="notif-item">Inga notiser.</div>`;
   }
-  let html = `<div class="notif-head">Notiser <div class="links"><a href="#" onclick="markAllRead();return false;">Markera lästa</a></div></div>`;
-  DB.notiser.slice().reverse().forEach(n=>{
-    html += `<div class="notif-item">
-      <div class="t">${escapeHtml(n.titel)}</div>
-      <div>${escapeHtml(n.text)}</div>
-      <div class="d">${new Date(n.datum).toLocaleString('sv-SE')}</div>
-      ${n.typ==='provfraga' && n.status!=='hanterad' && isAdmin() ? `
+  const antalOlasta = mina.filter(n=>!n.lest).length;
+  let html = `<div class="notif-head">Notiser${antalOlasta? ` <span class="badge badge-blue" style="margin-left:6px;">${antalOlasta} olästa</span>`:''} <div class="links"><a href="#" onclick="markAllRead();return false;">Markera lästa</a></div></div>`;
+  html += `<div class="notif-list">`;
+  mina.slice().reverse().forEach(n=>{
+    const meta = notifMetaFor(n);
+    html += `<div class="notif-item ${meta.cls} ${n.lest?'':'unread'}">
+      <div style="display:flex;gap:8px;align-items:flex-start;">
+        <span style="font-size:15px;flex-shrink:0;">${meta.icon}</span>
+        <div style="flex:1;min-width:0;">
+          <div class="t">${escapeHtml(n.titel)}${!n.lest? '<span class="unread-dot"></span>':''}</div>
+          <div>${escapeHtml(n.text)}</div>
+          <div class="d">${new Date(n.datum).toLocaleString('sv-SE')}</div>
+        </div>
+      </div>
+      ${n.typ==='provfraga' && n.status!=='hanterad' && isUtbildare() ? `
         <div class="notif-actions">
           <button class="btn btn-green btn-sm" onclick="handleExamRequest('${n.id}', true)">✓ Godkänn</button>
           <button class="btn btn-danger btn-sm" onclick="handleExamRequest('${n.id}', false)">✕ Neka</button>
         </div>` : ''}
     </div>`;
   });
+  html += `</div>`;
   return html;
 }
-function markAllRead(){ DB.notiser.forEach(n=>n.lest=true); saveDB(); renderTopbar(); }
+function markAllRead(){ DB.notiser.forEach(n=>{ if(notisSynligForMig(n)) n.lest=true; }); saveDB(); renderTopbar(); }
 
 function handleExamRequest(notisId, approve){
-  if(!requireAdmin()) return;
+  if(!requireUtbildare()) return;
   const n = DB.notiser.find(x=>x.id===notisId);
   if(!n) return;
   n.status = 'hanterad'; n.lest = true;
@@ -2299,6 +2336,7 @@ function finishQuiz(){
 
 /* ================= PROV & RÄTTNING ================= */
 function pageProv(){
+  if(!isUtbildare()) return pageAccessDenied('Du behöver utbildarbehörighet för att se prov & rättning.');
   const rows = [];
   DB.personal.forEach(p=>{
     p.utbildningar.forEach(u=>{
@@ -2323,7 +2361,7 @@ function pageProv(){
             ${u.resultat.fritextsvar && u.resultat.fritextsvar.length? `
               <div style="margin-top:8px;padding:10px 12px;background:#f7f9fb;border:1px solid var(--border);border-radius:6px;">
                 ${u.resultat.fritextsvar.map(fs=>`<div style="margin-bottom:6px;"><div style="font-size:11.5px;color:var(--muted);">${escapeHtml(fs.fraga)}</div><div style="font-size:13px;">${escapeHtml(fs.svar)||'<i>(inget svar)</i>'}</div></div>`).join('')}
-                ${isAdmin() && u.resultat.rattat===false? `<div style="display:flex;gap:8px;margin-top:6px;">
+                ${isUtbildare() && u.resultat.rattat===false? `<div style="display:flex;gap:8px;margin-top:6px;">
                   <button class="btn btn-green btn-sm" onclick="rattaProv('${p.id}','${m.id}',true)">Godkänn</button>
                   <button class="btn btn-danger btn-sm" onclick="rattaProv('${p.id}','${m.id}',false)">Underkänn</button>
                 </div>` : ''}
@@ -2333,14 +2371,20 @@ function pageProv(){
   `;
 }
 function rattaProv(pid, mid, godkand){
-  if(!requireAdmin()) return;
+  if(!requireUtbildare()) return;
   const p = DB.personal.find(x=>x.id===pid); if(!p) return;
   const u = p.utbildningar.find(x=>x.modulId===mid); if(!u || !u.resultat) return;
+  const kommentar = (prompt('Valfri kommentar till '+p.namn+' ('+(godkand?'godkänt':'ej godkänt')+', kan lämnas tomt):','')||'').trim();
   u.resultat.godkand = godkand;
   u.resultat.rattat = true;
+  if(kommentar) u.notering = kommentar;
   const m = DB.utbildningModuler.find(x=>x.id===mid);
   if(godkand && m){ const lastStepIdx = m.steg.length-1; u.steg[lastStepIdx] = true; }
-  saveDB(); renderPage(); toast(godkand? 'Prov godkänt' : 'Prov underkänt');
+  DB.notiser.push({id:uid('n'), typ:'provrattat', till:p.id,
+    titel:(godkand?'Godkänt: ':'Ej godkänt: ')+(m?m.namn:'prov'),
+    text:(godkand? 'Ditt prov har rättats och är godkänt.' : 'Ditt prov har rättats och är inte godkänt.')+(kommentar? ' Kommentar från utbildare: '+kommentar : ''),
+    datum:new Date().toISOString(), lest:false});
+  saveDB(); renderPage(); renderTopbar(); toast(godkand? 'Prov godkänt' : 'Prov underkänt');
 }
 
 /* ================= RUTINER / RIKTLINJER ================= */

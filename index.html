@@ -248,28 +248,31 @@
   /* ---------- Login screen ---------- */
   #login-screen{
     min-height:100vh;display:none;align-items:center;justify-content:center;
-    background:var(--bg);
+    background:linear-gradient(160deg, var(--navy) 0%, #071b12 100%);
     padding:24px;
   }
-  .login-wrap{display:flex;width:820px;max-width:100%;border-radius:8px;overflow:hidden;box-shadow:var(--shadow-md);border:1px solid var(--border);}
+  .login-wrap{display:flex;width:820px;max-width:100%;border-radius:12px;overflow:hidden;box-shadow:0 30px 70px rgba(0,0,0,.4);}
   .login-side{
-    flex:1;min-width:0;padding:40px 34px;color:#fff;
-    background:var(--accent);
+    flex:1;min-width:0;padding:44px 38px;color:#fff;
+    background:linear-gradient(155deg, var(--accent) 0%, var(--accent-dark) 100%);
     display:flex;flex-direction:column;justify-content:space-between;
   }
-  .login-side .icon{width:52px;height:52px;display:flex;align-items:center;justify-content:center;margin-bottom:20px;}
-  .login-side .icon img{width:100%;height:100%;object-fit:contain;}
-  .login-side h2{font-size:20px;margin:0 0 8px;letter-spacing:-.005em;font-weight:700;}
+  .login-side .brand-logo{height:24px;width:auto;filter:brightness(0) invert(1);opacity:.9;margin-bottom:26px;display:block;}
+  .login-side h2{font-size:21px;margin:0 0 9px;letter-spacing:-.005em;font-weight:700;}
   .login-side p{font-size:12.5px;color:rgba(255,255,255,.85);line-height:1.6;margin:0;}
   .login-side .feat{display:flex;align-items:center;gap:9px;font-size:12px;color:rgba(255,255,255,.9);margin-top:12px;}
   .login-side .feat .dotf{width:5px;height:5px;border-radius:50%;background:#fff;flex-shrink:0;}
+  .login-side .subfoot{font-size:11px;color:rgba(255,255,255,.65);margin:0;letter-spacing:.03em;text-transform:uppercase;}
   .login-card{background:#fff;width:380px;flex-shrink:0;overflow:hidden;}
   .login-brand{display:none;}
-  .login-body{padding:36px 32px;}
+  .login-body{padding:40px 34px;}
   .login-body h3{margin:0 0 4px;font-size:18px;letter-spacing:-.005em;color:var(--text);}
   .login-body .sub{font-size:12.5px;color:var(--muted);margin:0 0 22px;}
   .login-toggle{font-size:12px;color:var(--accent);text-align:center;display:block;margin-top:14px;cursor:pointer;font-weight:600;}
   .login-error{background:var(--red-bg);color:var(--red);font-size:12px;padding:9px 11px;border-radius:4px;margin-bottom:14px;border:1px solid #e6b3b3;}
+  .login-footlink{text-align:center;margin-top:18px;}
+  .login-footlink a{color:rgba(255,255,255,.55);font-size:11px;text-decoration:underline;}
+  .login-footlink a:hover{color:rgba(255,255,255,.85);}
   @media (max-width:720px){ .login-side{display:none;} .login-card{width:380px;} }
 </style>
 </head>
@@ -575,7 +578,6 @@ function seed(){
     infoInlagg:[],
     sbarRapporter:[],
     journalRapporter:[],
-    larmstatistik:{Trafikolycka:14,'Hjärtstopp':4,'Andningsbesvär':21,'Fallolycka':17,'Övrigt':9},
     schema:{dagar:['Sön','Tis','Tor'], timme:19, minut:0},
     adresser:['Storgatan 12'],
     inloggadeKonton:['karl.svensson'],
@@ -1006,12 +1008,15 @@ function updateCountdown(){
   el.textContent = String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
 }
 
+function fordonBadgeCls(status){
+  return status==='Ledig' ? 'badge-green' : (status==='Verkstad' ? 'badge-red' : 'badge-amber');
+}
 function pageHem(){
   const me = currentUser();
   const info = nextPatrolInfo();
   const senaste = DB.utsattningar.slice().sort((a,b)=>(b.datum+b.tid).localeCompare(a.datum+a.tid)).slice(0,3);
-  const statEntries = Object.entries(DB.larmstatistik);
-  const statMax = Math.max(...statEntries.map(e=>e[1]),1);
+  const fordonStatusOrdning = ['Ledig','Upptagen','Verkstad'];
+  const fordonPerStatus = fordonStatusOrdning.map(s=>({status:s, antal: DB.fordon.filter(f=>f.status===s).length})).filter(fs=>fs.antal>0);
   return `
     <div class="page-head">
       <div>
@@ -1054,12 +1059,19 @@ function pageHem(){
             </div>`).join('')}
       </div>
       <div class="card pad">
-        <b style="font-size:12.5px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:14px;">Larmstatistik — senaste månaden</b>
-        ${statEntries.map(([k,v])=>`
-          <div style="margin-bottom:10px;">
-            <div style="display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:4px;"><span>${escapeHtml(k)}</span><b>${v}</b></div>
-            <div class="prog-bar"><div style="width:${(v/statMax*100).toFixed(0)}%"></div></div>
-          </div>`).join('')}
+        <b style="font-size:12.5px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:10px;">Fordonsstatus</b>
+        ${DB.fordon.length===0 ? `<div class="empty" style="padding:24px 10px;">Inga fordon registrerade.</div>` : `
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;">
+            ${fordonPerStatus.map(fs=>`<span class="badge ${fordonBadgeCls(fs.status)}">${fs.antal} ${escapeHtml(fs.status)}</span>`).join('')}
+          </div>
+          ${DB.fordon.map(f=>`
+            <div class="list-row" style="display:flex;justify-content:space-between;align-items:center;">
+              <div><b>${escapeHtml(f.kod)}</b> <span style="color:var(--muted);font-size:11.5px;">— ${escapeHtml(f.typ)}</span>
+                <div style="font-size:11px;color:var(--muted);">${escapeHtml(f.station)}</div>
+              </div>
+              <span class="badge ${fordonBadgeCls(f.status)}">${escapeHtml(f.status)}</span>
+            </div>`).join('')}
+        `}
       </div>
     </div>
   `;
@@ -2850,6 +2862,7 @@ function renderLoginScreen(){
       <div class="login-wrap">
         <div class="login-side">
           <div>
+            <img class="brand-logo" src="${LOGO_VGR}" alt="Region Västra Götaland">
             <h2>Ambulansintranät</h2>
             <p>Ett samlat verktyg för utsättningar, personal, fordon, formulär och kompetens — delat mellan alla på stationen.</p>
             <div class="feat"><span class="dotf"></span> Realtidsdelad data mellan datorer</div>
@@ -2857,7 +2870,7 @@ function renderLoginScreen(){
             <div class="feat"><span class="dotf"></span> Formulär, SBAR &amp; journalföring</div>
             <div class="feat"><span class="dotf"></span> Utbildning &amp; kompetenskontroll</div>
           </div>
-          <img src="${LOGO_VGR}" alt="Region Västra Götaland" style="max-width:100%;height:auto;filter:brightness(0) invert(1);opacity:.85;">
+          <p class="subfoot">Sahlgrenska International Care</p>
         </div>
         <div class="login-card">
           <div class="login-body">
@@ -2887,8 +2900,8 @@ function renderLoginScreen(){
           </div>
         </div>
       </div>
-      <div style="text-align:center;margin-top:16px;">
-        <a href="#" onclick="if(confirm('Rensa all sparad data och börja om från grunden? Detta går inte att ångra.')){resetAllData();} return false;" style="color:rgba(255,255,255,.5);font-size:11px;text-decoration:underline;">Problem att logga in? Rensa data och börja om</a>
+      <div class="login-footlink">
+        <a href="#" onclick="if(confirm('Rensa all sparad data och börja om från grunden? Detta går inte att ångra.')){resetAllData();} return false;">Problem att logga in? Rensa data och börja om</a>
       </div>
     </div>
   `;

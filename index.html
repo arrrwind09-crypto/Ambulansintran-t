@@ -170,6 +170,7 @@
   /* ---------- misc pages ---------- */
   .schema-banner{display:flex;align-items:center;justify-content:space-between;gap:20px;margin-bottom:16px;background:linear-gradient(90deg,#eff7f0 0%,#fff 100%);}
   .hem-grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px;}
+  .fordon-scroll{max-height:260px;overflow-y:auto;margin:0 -8px;padding:0 8px;}
   .countdown{font-family:var(--mono);font-size:26px;font-weight:700;color:var(--accent-dark);letter-spacing:.02em;}
   .next-label{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;}
   .next-time{font-size:12.5px;color:var(--text);font-weight:700;}
@@ -1113,13 +1114,15 @@ function pageHem(){
           <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;">
             ${fordonPerStatus.map(fs=>`<span class="badge ${fordonBadgeCls(fs.status)}">${fs.antal} ${escapeHtml(fs.status)}</span>`).join('')}
           </div>
-          ${DB.fordon.map(f=>`
-            <div class="list-row" style="display:flex;justify-content:space-between;align-items:center;">
-              <div><b>${escapeHtml(f.kod)}</b> <span style="color:var(--muted);font-size:11.5px;">— ${escapeHtml(f.typ)}</span>
-                <div style="font-size:11px;color:var(--muted);">${escapeHtml(f.station)}</div>
-              </div>
-              <span class="badge ${fordonBadgeCls(f.status)}">${escapeHtml(f.status)}</span>
-            </div>`).join('')}
+          <div class="fordon-scroll">
+            ${DB.fordon.map(f=>`
+              <div class="list-row" style="display:flex;justify-content:space-between;align-items:center;">
+                <div><b>${escapeHtml(f.kod)}</b> <span style="color:var(--muted);font-size:11.5px;">— ${escapeHtml(f.typ)}</span>
+                  <div style="font-size:11px;color:var(--muted);">${escapeHtml(f.station)}</div>
+                </div>
+                <span class="badge ${fordonBadgeCls(f.status)}">${escapeHtml(f.status)}</span>
+              </div>`).join('')}
+          </div>
         `}
       </div>
     </div>

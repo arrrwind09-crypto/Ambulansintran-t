@@ -384,8 +384,8 @@ function seed(){
     ],
     fordon:[
       {id:'f1', typ:'Mercedes Sprinter', kod:'331-9110', regnr:'ABC 123', kategori:'Ambulans', station:'Station City', status:'Ledig', ater:null},
-      {id:'f2', typ:'MAN TGE', kod:'331-9130', regnr:'ABC 123', kategori:'Ambulans', station:'Station City', status:'Verkstad', ater:'2026-03-22'},
-      {id:'f3', typ:'Volvvo XC90', kod:'339-8950', regnr:'ABC 123', kategori:'Ambulans', station:'Station Solna', status:'Ledig', ater:null}
+      {id:'f2', typ:'MAN TGE', kod:'331-9130', regnr:'ABC 124', kategori:'Ambulans', station:'Station City', status:'Verkstad', ater:'2026-03-22'},
+      {id:'f3', typ:'Volvo XC90', kod:'339-8950', regnr:'ABC 125', kategori:'Ambulans', station:'Station Solna', status:'Ledig', ater:null}
     ],
     utsattningar:[
       {id:'u1', namn:'Onsdag', datum:'2026-03-25', tid:'19:00', anteckningar:'Ah en bra patrull! :)', status:'Planerad',
@@ -408,9 +408,58 @@ function seed(){
         prov:{godkantGrans:70, maxForsok:3, fragor:[
           {id:'q1', typ:'Sant/Falskt', text:'Frågan', poang:1, ratt:'Sant'},
           {id:'q2', typ:'Flerval', text:'Frågan här', poang:1, alt:{A:'Alternativ A',B:'Alternativ B',C:'',D:''}, ratt:'B'}
+        ]}},
+      {id:'m3', namn:'Teoriprov – Ambulanssjukvårdare', yrkeskategori:'Ambulanssjukvårdare', niva:'Grundnivå', tid:20,
+        beskrivning:'Kort teoriprov för yrkeskategorin.', steg:['Teori','Prov'],
+        prov:{godkantGrans:65, maxForsok:3, fragor:[
+          {id:'m3q1', typ:'Sant/Falskt', text:'Sekretess gäller för patientuppgifter även efter avslutat pass.', poang:1, ratt:'Sant'},
+          {id:'m3q2', typ:'Flerval', text:'Vem markerar i systemet att ett teoriprov med fritextsvar är godkänt?', poang:1, alt:{A:'Den som gjort provet',B:'En administratör/utbildare',C:'Ingen, det sker automatiskt',D:'Valfri kollega'}, ratt:'B'},
+          {id:'m3q3', typ:'Sant/Falskt', text:'Fordon och medicinteknisk utrustning ska kontrolleras innan varje pass.', poang:1, ratt:'Sant'}
+        ]}},
+      {id:'m4', namn:'Teoriprov – Sjuksköterska', yrkeskategori:'Sjuksköterska', niva:'Grundnivå', tid:20,
+        beskrivning:'Kort teoriprov för yrkeskategorin.', steg:['Teori','Prov'],
+        prov:{godkantGrans:65, maxForsok:3, fragor:[
+          {id:'m4q1', typ:'Sant/Falskt', text:'Sekretess gäller för patientuppgifter även efter avslutat pass.', poang:1, ratt:'Sant'},
+          {id:'m4q2', typ:'Flerval', text:'Vem markerar i systemet att ett teoriprov med fritextsvar är godkänt?', poang:1, alt:{A:'Den som gjort provet',B:'En administratör/utbildare',C:'Ingen, det sker automatiskt',D:'Valfri kollega'}, ratt:'B'},
+          {id:'m4q3', typ:'Sant/Falskt', text:'Given läkemedelsbehandling ska dokumenteras i patientjournalen.', poang:1, ratt:'Sant'}
+        ]}},
+      {id:'m5', namn:'Teoriprov – Spec. Sjuksköterska', yrkeskategori:'Spec. Sjuksköterska', niva:'Fördjupningsnivå', tid:20,
+        beskrivning:'Kort teoriprov för yrkeskategorin.', steg:['Teori','Prov'],
+        prov:{godkantGrans:65, maxForsok:3, fragor:[
+          {id:'m5q1', typ:'Sant/Falskt', text:'Sekretess gäller för patientuppgifter även efter avslutat pass.', poang:1, ratt:'Sant'},
+          {id:'m5q2', typ:'Flerval', text:'Vem markerar i systemet att ett teoriprov med fritextsvar är godkänt?', poang:1, alt:{A:'Den som gjort provet',B:'En administratör/utbildare',C:'Ingen, det sker automatiskt',D:'Valfri kollega'}, ratt:'B'},
+          {id:'m5q3', typ:'Fritext', text:'Beskriv kort ditt ansvarsområde som specialistsjuksköterska på uppdrag.', poang:1}
+        ]}},
+      {id:'m6', namn:'Teoriprov – Läkare', yrkeskategori:'Läkare', niva:'Grundnivå', tid:20,
+        beskrivning:'Kort teoriprov för yrkeskategorin.', steg:['Teori','Prov'],
+        prov:{godkantGrans:65, maxForsok:3, fragor:[
+          {id:'m6q1', typ:'Sant/Falskt', text:'Sekretess gäller för patientuppgifter även efter avslutat pass.', poang:1, ratt:'Sant'},
+          {id:'m6q2', typ:'Flerval', text:'Vem markerar i systemet att ett teoriprov med fritextsvar är godkänt?', poang:1, alt:{A:'Den som gjort provet',B:'En administratör/utbildare',C:'Ingen, det sker automatiskt',D:'Valfri kollega'}, ratt:'B'},
+          {id:'m6q3', typ:'Sant/Falskt', text:'Ordinationer och beslut som läkare fattar på plats ska dokumenteras.', poang:1, ratt:'Sant'}
+        ]}},
+      {id:'m7', namn:'Teoriprov – HEMS', yrkeskategori:'HEMS', niva:'Fördjupningsnivå', tid:20,
+        beskrivning:'Kort teoriprov för yrkeskategorin.', steg:['Teori','Prov'],
+        prov:{godkantGrans:65, maxForsok:3, fragor:[
+          {id:'m7q1', typ:'Sant/Falskt', text:'Sekretess gäller för patientuppgifter även efter avslutat pass.', poang:1, ratt:'Sant'},
+          {id:'m7q2', typ:'Flerval', text:'Vem markerar i systemet att ett teoriprov med fritextsvar är godkänt?', poang:1, alt:{A:'Den som gjort provet',B:'En administratör/utbildare',C:'Ingen, det sker automatiskt',D:'Valfri kollega'}, ratt:'B'},
+          {id:'m7q3', typ:'Sant/Falskt', text:'Flygsäkerhetskontroll ska genomföras innan varje HEMS-uppdrag.', poang:1, ratt:'Sant'}
+        ]}},
+      {id:'m8', namn:'Teoriprov – Narkossjuksköterska', yrkeskategori:'Narkossjuksköterska', niva:'Fördjupningsnivå', tid:20,
+        beskrivning:'Kort teoriprov för yrkeskategorin.', steg:['Teori','Prov'],
+        prov:{godkantGrans:65, maxForsok:3, fragor:[
+          {id:'m8q1', typ:'Sant/Falskt', text:'Sekretess gäller för patientuppgifter även efter avslutat pass.', poang:1, ratt:'Sant'},
+          {id:'m8q2', typ:'Flerval', text:'Vem markerar i systemet att ett teoriprov med fritextsvar är godkänt?', poang:1, alt:{A:'Den som gjort provet',B:'En administratör/utbildare',C:'Ingen, det sker automatiskt',D:'Valfri kollega'}, ratt:'B'},
+          {id:'m8q3', typ:'Sant/Falskt', text:'Narkosutrustning ska kontrolleras enligt checklista innan användning.', poang:1, ratt:'Sant'}
+        ]}},
+      {id:'m9', namn:'Teoriprov – Övriga kurser', yrkeskategori:'Övriga kurser', niva:'Grundnivå', tid:20,
+        beskrivning:'Kort teoriprov för övriga kurser.', steg:['Teori','Prov'],
+        prov:{godkantGrans:65, maxForsok:3, fragor:[
+          {id:'m9q1', typ:'Sant/Falskt', text:'Sekretess gäller för patientuppgifter även efter avslutat pass.', poang:1, ratt:'Sant'},
+          {id:'m9q2', typ:'Flerval', text:'Vem markerar i systemet att ett teoriprov med fritextsvar är godkänt?', poang:1, alt:{A:'Den som gjort provet',B:'En administratör/utbildare',C:'Ingen, det sker automatiskt',D:'Valfri kollega'}, ratt:'B'},
+          {id:'m9q3', typ:'Sant/Falskt', text:'Genomförd kurs ska registreras på personens profil i systemet.', poang:1, ratt:'Sant'}
         ]}}
     ],
-    kategorier:['Ambulanssjukvårdare','Sjuksköterska','Spec. Sjuksköterska','Läkare','HEMS','PAM','Övriga kurser'],
+    kategorier:['Ambulanssjukvårdare','Sjuksköterska','Spec. Sjuksköterska','Läkare','HEMS','Narkossjuksköterska','Övriga kurser'],
     rutiner:{}, // { 'global:Allmänt': [ {id,titel,kategori,typ,url,beskrivning} ] }
     meddelanden:[],
     notiser:[],
@@ -443,6 +492,7 @@ function migrateDB(){
   });
   if(!Array.isArray(DB.utbildningModuler)) DB.utbildningModuler = defaults.utbildningModuler;
   if(!Array.isArray(DB.kategorier) || DB.kategorier.length===0) DB.kategorier = defaults.kategorier;
+  if(!DB.rutinKategorier || typeof DB.rutinKategorier!=='object') DB.rutinKategorier = {};
   if(!DB.kontoAdmin || typeof DB.kontoAdmin!=='object') DB.kontoAdmin = {};
   // Säkerhetsnät: om datan migrerades från en äldre version utan adminflaggor,
   // eller om alla adminflaggor av misstag blivit falska, gör alla befintliga
@@ -1147,17 +1197,23 @@ function saveUtsattning(id){
 }
 
 /* ================= PERSONAL ================= */
+let personalSok = '';
 function pagePersonal(){
-  const aktiva = DB.personal.filter(p=>p.status==='Aktiv');
-  const ovriga = DB.personal.filter(p=>p.status!=='Aktiv');
+  const sok = personalSok.trim().toLowerCase();
+  const matchar = p => !sok || p.namn.toLowerCase().includes(sok) || (p.roll||'').toLowerCase().includes(sok);
+  const aktiva = DB.personal.filter(p=>p.status==='Aktiv' && matchar(p));
+  const ovriga = DB.personal.filter(p=>p.status!=='Aktiv' && matchar(p));
   return `
     <div class="page-head">
       <div><h1 class="page-title">Personal</h1><p class="page-sub">Samtlig personal och behörigheter</p></div>
       ${isAdmin()? `<button class="btn btn-primary" onclick="openPersonalModal()">+ Lägg till personal</button>` : `<span class="hint">Adminbehörighet krävs för att lägga till/redigera personal</span>`}
     </div>
+    <div class="field" style="max-width:320px;">
+      <input type="text" id="personalSokInput" placeholder="Sök på namn eller roll..." value="${escapeHtml(personalSok)}" oninput="personalSok=this.value;renderPage();const el=document.getElementById('personalSokInput');if(el){el.focus();el.selectionStart=el.selectionEnd=el.value.length;}">
+    </div>
     <div style="font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:700;margin:0 0 8px;">Aktiva · ${aktiva.length} st</div>
     <div class="pers-grid" style="margin-bottom:24px;">
-      ${aktiva.map(personCard).join('') || `<div class="hint">Ingen aktiv personal.</div>`}
+      ${aktiva.map(personCard).join('') || `<div class="hint">${sok?'Ingen träff.':'Ingen aktiv personal.'}</div>`}
     </div>
     ${ovriga.length? `
     <div style="font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:700;margin:0 0 8px;">Övrig / inaktiv · ${ovriga.length} st</div>
@@ -2119,16 +2175,17 @@ function finishQuiz(){
   const {mid, svar} = window.__quizState;
   const m = DB.utbildningModuler.find(x=>x.id===mid);
   let poang=0, maxPoang=0, hasFritext=false;
+  const fritextsvar = [];
   m.prov.fragor.forEach(q=>{
     maxPoang += q.poang;
-    if(q.typ==='Fritext'){ hasFritext=true; return; }
+    if(q.typ==='Fritext'){ hasFritext=true; fritextsvar.push({fraga:q.text, svar:svar[q.id]||''}); return; }
     if(svar[q.id]===q.ratt) poang += q.poang;
   });
   const pct = maxPoang? Math.round(poang/maxPoang*100):0;
   const godkand = pct >= m.prov.godkantGrans;
   const me = currentUser();
   const prog = me.utbildningar.find(u=>u.modulId===mid);
-  prog.resultat = {poang, maxPoang, pct, godkand, hasFritext, datum:new Date().toISOString()};
+  prog.resultat = {poang, maxPoang, pct, godkand, hasFritext, fritextsvar, rattat:!hasFritext, datum:new Date().toISOString()};
   prog.provStatus = 'genomfort';
   const lastStepIdx = m.steg.length-1;
   if(godkand && !hasFritext) prog.steg[lastStepIdx] = true;
@@ -2154,24 +2211,49 @@ function pageProv(){
     <div class="card pad">
       ${rows.length===0 ? `<div class="empty"><div class="big">📝</div><b>Inga genomförda prov ännu</b>Genomförda prov dyker upp här för rättning och uppföljning.</div>` :
         rows.map(({p,m,u})=>`
-          <div class="list-row" style="display:flex;justify-content:space-between;align-items:center;">
-            <div><b>${escapeHtml(p.namn)}</b> <span style="color:var(--muted);">— ${escapeHtml(m.namn)}</span>
-              <div style="font-size:11.5px;color:var(--muted);">${new Date(u.resultat.datum).toLocaleString('sv-SE')} ${u.resultat.hasFritext?'· Innehåller fritextsvar som kräver manuell rättning':''}</div>
+          <div class="list-row">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <div><b>${escapeHtml(p.namn)}</b> <span style="color:var(--muted);">— ${escapeHtml(m.namn)}</span>
+                <div style="font-size:11.5px;color:var(--muted);">${new Date(u.resultat.datum).toLocaleString('sv-SE')} ${u.resultat.hasFritext && !u.resultat.rattat?'· Väntar på manuell rättning':(u.resultat.hasFritext?'· Manuellt rättat':'')}</div>
+              </div>
+              <span class="badge ${u.resultat.rattat===false?'badge-amber':(u.resultat.godkand?'badge-green':'badge-red')}">${u.resultat.rattat===false? 'Väntar på rättning' : (u.resultat.pct+'% '+(u.resultat.godkand?'Godkänt':'Ej godkänt'))}</span>
             </div>
-            <span class="badge ${u.resultat.godkand?'badge-green':'badge-red'}">${u.resultat.pct}% ${u.resultat.godkand?'Godkänt':'Ej godkänt'}</span>
+            ${u.resultat.fritextsvar && u.resultat.fritextsvar.length? `
+              <div style="margin-top:8px;padding:10px 12px;background:#f7f9fb;border:1px solid var(--border);border-radius:6px;">
+                ${u.resultat.fritextsvar.map(fs=>`<div style="margin-bottom:6px;"><div style="font-size:11.5px;color:var(--muted);">${escapeHtml(fs.fraga)}</div><div style="font-size:13px;">${escapeHtml(fs.svar)||'<i>(inget svar)</i>'}</div></div>`).join('')}
+                ${isAdmin() && u.resultat.rattat===false? `<div style="display:flex;gap:8px;margin-top:6px;">
+                  <button class="btn btn-green btn-sm" onclick="rattaProv('${p.id}','${m.id}',true)">Godkänn</button>
+                  <button class="btn btn-danger btn-sm" onclick="rattaProv('${p.id}','${m.id}',false)">Underkänn</button>
+                </div>` : ''}
+              </div>` : ''}
           </div>`).join('')}
     </div>
   `;
 }
+function rattaProv(pid, mid, godkand){
+  if(!requireAdmin()) return;
+  const p = DB.personal.find(x=>x.id===pid); if(!p) return;
+  const u = p.utbildningar.find(x=>x.modulId===mid); if(!u || !u.resultat) return;
+  u.resultat.godkand = godkand;
+  u.resultat.rattat = true;
+  const m = DB.utbildningModuler.find(x=>x.id===mid);
+  if(godkand && m){ const lastStepIdx = m.steg.length-1; u.steg[lastStepIdx] = true; }
+  saveDB(); renderPage(); toast(godkand? 'Prov godkänt' : 'Prov underkänt');
+}
 
 /* ================= RUTINER / RIKTLINJER ================= */
 let rutinTab = {}; // per scope: 'Hem' | 'Rutiner / Riktlinjer'
+let rutinKatFilter = {}; // per scope: vald kategori-flik, 'Alla' som standard
 function rutinKey(scope){ return scope; }
 function pageRutiner(scopeType, scopeName){
   const key = scopeType+':'+scopeName;
   if(!DB.rutiner[key]) DB.rutiner[key]=[];
+  if(!DB.rutinKategorier) DB.rutinKategorier={};
+  if(!DB.rutinKategorier[key]) DB.rutinKategorier[key]=[];
   const tab = rutinTab[key] || 'Rutiner';
-  const cats = [...new Set(DB.rutiner[key].map(r=>r.kategori))];
+  const cats = [...new Set([...DB.rutinKategorier[key], ...DB.rutiner[key].map(r=>r.kategori)])];
+  const katFilter = rutinKatFilter[key] || 'Alla';
+  const visadeRutiner = DB.rutiner[key].filter(r=> katFilter==='Alla' || r.kategori===katFilter);
   return `
     <div class="page-head"><div><h1 class="page-title">Rutiner / Riktlinjer</h1><p class="page-sub">${scopeType==='global'?'Gemensamma rutiner och riktlinjer':'Rutiner för '+escapeHtml(scopeName)}</p></div>
       ${isAdmin()? `<button class="btn btn-primary" onclick="openRutinModal('${key}')">+ Lägg till</button>` : ''}
@@ -2188,9 +2270,13 @@ function pageRutiner(scopeType, scopeName){
         <button class="btn btn-primary" onclick="skapaRutinKategori('${key}')">Skapa kategori</button>
       </div>
     </div>` : ''}
+    ${cats.length? `<div class="tabbar">
+      <div class="chip ${katFilter==='Alla'?'active':''}" onclick="rutinKatFilter['${key}']='Alla';renderPage();">Alla</div>
+      ${cats.map(c=>`<div class="chip ${katFilter===c?'active':''}" onclick="rutinKatFilter['${key}']='${escapeHtml(c)}';renderPage();">${escapeHtml(c)}</div>`).join('')}
+    </div>` : ''}
     <div class="card pad">
-      ${DB.rutiner[key].length===0 ? `<div class="empty"><div class="big">📄</div><b>Inga rutiner tillagda</b>Admin kan lägga till rutiner och riktlinjer med länkar här.</div>` :
-        DB.rutiner[key].map(r=>`
+      ${visadeRutiner.length===0 ? `<div class="empty"><div class="big">📄</div><b>Inga rutiner${katFilter!=='Alla'?' i denna kategori':' tillagda'}</b>Admin kan lägga till rutiner och riktlinjer med länkar här.</div>` :
+        visadeRutiner.map(r=>`
           <div class="list-row" style="display:flex;justify-content:space-between;align-items:flex-start;">
             <div><span class="badge badge-blue" style="margin-right:8px;">${escapeHtml(r.kategori)}</span><b>${escapeHtml(r.titel)}</b>
               ${r.beskrivning? `<div style="font-size:12px;color:var(--muted);margin-top:3px;">${escapeHtml(r.beskrivning)}</div>`:''}
@@ -2207,18 +2293,21 @@ function skapaRutinKategori(key){
   if(!val) return;
   if(!DB.rutinKategorier) DB.rutinKategorier={};
   if(!DB.rutinKategorier[key]) DB.rutinKategorier[key]=[];
-  DB.rutinKategorier[key].push(val);
-  saveDB(); toast('Kategori skapad: '+val);
-  document.getElementById('nyKategoriInput').value='';
+  if(!DB.rutinKategorier[key].includes(val)) DB.rutinKategorier[key].push(val);
+  saveDB(); toast('Kategori skapad: '+val); renderPage();
 }
 function openRutinModal(key){
   if(!requireAdmin()) return;
+  if(!DB.rutinKategorier) DB.rutinKategorier={};
+  const kats = DB.rutinKategorier[key] || [];
   openModal(`
     <div class="modal-head"><h3>Lägg till rutin</h3><button class="modal-close" onclick="closeModal()">✕</button></div>
     <div class="modal-body">
       <div class="grid2">
         <div class="field"><span class="label">Titel</span><input type="text" id="rTitel" placeholder="ex: Hjärtstopp vuxen"></div>
-        <div class="field"><span class="label">Kategori</span><input type="text" id="rKategori" placeholder="ex: Kardiologi"></div>
+        <div class="field"><span class="label">Kategori</span><input type="text" id="rKategori" list="rKategoriList" placeholder="ex: Kardiologi">
+          <datalist id="rKategoriList">${kats.map(k=>`<option value="${escapeHtml(k)}">`).join('')}</datalist>
+        </div>
       </div>
       <div class="field"><span class="label">Typ</span><select id="rTyp"><option>Extern länk / URL</option><option>Dokument</option><option>Textinnehåll</option></select></div>
       <div class="field"><span class="label">URL</span><input type="text" id="rUrl" placeholder="https://..."></div>
@@ -2249,7 +2338,10 @@ function pageMittKonto(){
         <div class="kv"><span>Status</span><b>${escapeHtml(me.status)}</b></div>
         <div class="kv"><span>Konto</span><b>${escapeHtml(SESSION.konto||'—')}</b></div>
         <div class="kv"><span>Behörighetsnivå</span><span class="badge ${isAdmin()?'badge-blue':'badge-gray'}">${isAdmin()?'Admin':'Standard'}</span></div>
-        ${isAdmin()? `<button class="btn btn-sm" style="margin-top:12px;" onclick="openPersonalModal('${me.id}')">Redigera profil</button>` : ''}
+        <div style="display:flex;gap:8px;margin-top:12px;">
+          ${isAdmin()? `<button class="btn btn-sm" onclick="openPersonalModal('${me.id}')">Redigera profil</button>` : ''}
+          <button class="btn btn-sm" onclick="bytMittLosenord()">Byt lösenord</button>
+        </div>
       </div>
       <div class="card pad">
         <b style="display:block;margin-bottom:12px;">Mina behörigheter</b>
@@ -2262,6 +2354,17 @@ function pageMittKonto(){
       </div>` : ''}
     </div>
   `;
+}
+
+function bytMittLosenord(){
+  const konto = SESSION.konto;
+  const nuvarande = prompt('Ange ditt nuvarande lösenord:'); if(nuvarande===null) return;
+  const korrekt = (DB.losenord||{})[konto];
+  if(korrekt!==undefined && korrekt!=='' && nuvarande!==korrekt){ toast('Fel nuvarande lösenord'); return; }
+  const nytt = prompt('Ange nytt lösenord:'); if(nytt===null) return;
+  const bekrafta = prompt('Bekräfta nytt lösenord:'); if(bekrafta===null) return;
+  if(nytt!==bekrafta){ toast('Lösenorden matchar inte — inget ändrat'); return; }
+  DB.losenord[konto] = nytt; saveDB(); toast('Lösenord uppdaterat');
 }
 
 /* ================= MEDDELANDEN ================= */
@@ -2319,6 +2422,7 @@ function pageAnvandare(){
           <div><b>${escapeHtml(k)}</b> ${admin?'<span class="badge badge-blue" style="margin-left:6px;">Admin</span>':''}<div style="font-size:11.5px;color:var(--muted);">${p?'Kopplad till '+escapeHtml(p.namn):'Ej kopplad till personal'}</div></div>
           <div style="display:flex;gap:6px;">
             <button class="btn btn-sm" onclick="toggleKontoAdmin('${k}')" ${ensamAdmin?'disabled title="Minst ett konto måste vara admin"':''}>${admin?'Ta bort admin':'Gör till admin'}</button>
+            <button class="btn btn-sm" onclick="resetLosenord('${k}')">Byt lösenord</button>
             <button class="btn btn-danger btn-sm" onclick="delAnvandare('${k}')">Ta bort</button>
           </div>
         </div>`;
@@ -2342,6 +2446,10 @@ function addAnvandare(){
   const admin = confirm('Ska kontot ha adminbehörighet?');
   DB.inloggadeKonton.push(namn); DB.losenord[namn] = pass; DB.kontoAdmin[namn] = admin;
   saveDB(); renderPage(); toast('Konto skapat');
+}
+function resetLosenord(k){
+  const nytt = prompt('Nytt lösenord för '+k+':', ''); if(nytt===null) return;
+  DB.losenord[k] = nytt; saveDB(); toast('Lösenord uppdaterat för '+k);
 }
 function delAnvandare(k){
   if(DB.kontoAdmin[k]){

@@ -177,6 +177,8 @@
   .formular-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;}
   .formular-card{cursor:pointer;transition:box-shadow .12s ease, transform .08s ease;}
   .formular-card:hover{box-shadow:var(--shadow-md);transform:translateY(-1px);}
+  .mall-hint{background:var(--green-bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--text);margin-bottom:16px;line-height:1.55;}
+  .mall-hint b{display:block;margin-bottom:4px;}
   .countdown{font-family:var(--mono);font-size:26px;font-weight:700;color:var(--accent-dark);letter-spacing:.02em;}
   .next-label{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;}
   .next-time{font-size:12.5px;color:var(--text);font-weight:700;}
@@ -712,6 +714,7 @@ function seed(){
     inloggadeKonton:['karl.svensson'],
     losenord:{'karl.svensson':'1234'},
     kontoAdmin:{'karl.svensson':true},
+    discordNamn:{},
     vantandeKonton:[],
     nastaId:100
   };
@@ -1739,7 +1742,8 @@ function formularForm(){
     <div style="max-width:560px;">
       <button class="btn btn-sm" style="margin-bottom:14px;" onclick="window.__formShowNew=null; renderPage();">← Tillbaka</button>
       <div class="card pad">
-        <b style="font-size:15px;display:block;margin-bottom:16px;">Skade-/Olycksrapport</b>
+        <b style="font-size:15px;display:block;margin-bottom:8px;">Skade-/Olycksrapport</b>
+        <div class="mall-hint"><b>💡 Vad ska stå här?</b>Fyll i denna rapport vid skada på fordon, utrustning eller personal i samband med ett uppdrag. Beskriv vad som hände, i vilken ordning, och eventuella konsekvenser — skriv så att någon som inte var på plats förstår händelseförloppet.</div>
         <div class="grid2">
           <div class="field"><span class="label">Datum för händelsen</span><input type="date" id="frmDatum" value="${todayISO()}"></div>
           <div class="field"><span class="label">Ungefärlig tid</span><input type="time" id="frmTid" value="${new Date().toTimeString().slice(0,5)}"></div>
@@ -1755,7 +1759,7 @@ function formularForm(){
         <div class="field"><span class="label">Typ av skada</span>
           <select id="frmTyp"><option value="">Välj typ...</option>${SKADETYPER.map(t=>`<option>${t}</option>`).join('')}</select>
         </div>
-        <div class="field"><span class="label">Beskrivning av händelsen</span><textarea id="frmBeskrivning" rows="4" placeholder="Beskriv vad som hände..."></textarea></div>
+        <div class="field"><span class="label">Beskrivning av händelsen</span><textarea id="frmBeskrivning" rows="4" placeholder="ex: Vid backning ut från garaget kolliderade fordonet med en lyktstolpe. Föraren uppmärksammade inte hindret i backspegeln. Skada på höger bakskärm, inga personskador."></textarea></div>
         <div class="field"><span class="label">Vittnen (namn / enhet)</span><input type="text" id="frmVittnen" placeholder="ex: Anna Andersson, 3 31-1234"></div>
         <label style="display:flex;align-items:center;gap:8px;font-size:12.5px;margin-bottom:10px;"><input type="checkbox" id="frmPatient"> Patient fanns ombord i ambulansen</label>
         <label style="display:flex;align-items:center;gap:8px;font-size:12.5px;margin-bottom:10px;"><input type="checkbox" id="frmPersonskador"> Personskador förekommer</label>
@@ -1801,7 +1805,8 @@ function formSBARForm(){
       <button class="btn btn-sm" style="margin-bottom:14px;" onclick="window.__formShowNew=null; renderPage();">← Tillbaka</button>
       <div class="card pad">
         <b style="font-size:15px;display:block;margin-bottom:4px;">SBAR Avrapportering</b>
-        <p class="page-sub" style="margin-bottom:16px;">Standardiserad muntlig/skriftlig överrapportering</p>
+        <p class="page-sub" style="margin-bottom:8px;">Standardiserad muntlig/skriftlig överrapportering</p>
+        <div class="mall-hint"><b>💡 Vad ska stå här?</b>SBAR används för strukturerad överrapportering av en patient till mottagande enhet. Håll varje del kort och konkret — den som tar emot rapporten ska kunna agera på informationen utan att behöva fråga efter mer.</div>
 
         <div style="font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:700;margin:0 0 8px;">Patientuppgifter</div>
         <div class="grid2">
@@ -1820,12 +1825,12 @@ function formSBARForm(){
           <div class="field"><span class="label">Datum och tid</span><input type="datetime-local" id="sbDatumTid"></div>
           <div class="field"><span class="label">Aktuellt vårdfordon</span><select id="sbFordon"><option value="">Välj fordon...</option>${DB.fordon.map(v=>`<option value="${v.id}">${escapeHtml(v.kod)} — ${escapeHtml(v.typ)} (${escapeHtml(v.station)})</option>`).join('')}</select></div>
         </div>
-        <div class="field"><span class="label">Aktuellt tillstånd</span><textarea id="sbTillstand" rows="2"></textarea></div>
-        <div class="field"><span class="label">Anledning till ambulanskontakt</span><textarea id="sbAnledning" rows="2"></textarea></div>
-        <div class="field"><span class="label">Vidtagna åtgärder</span><textarea id="sbAtgarder" rows="2"></textarea></div>
+        <div class="field"><span class="label">Aktuellt tillstånd</span><textarea id="sbTillstand" rows="2" placeholder="ex: Vaken, orienterad, andfådd i vila, viss cyanos runt läpparna."></textarea></div>
+        <div class="field"><span class="label">Anledning till ambulanskontakt</span><textarea id="sbAnledning" rows="2" placeholder="ex: Plötslig andnöd sedan 30 minuter, ingen tidigare liknande episod."></textarea></div>
+        <div class="field"><span class="label">Vidtagna åtgärder</span><textarea id="sbAtgarder" rows="2" placeholder="ex: Syrgas 3 l/min på grimma, patienten i halvsittande läge."></textarea></div>
 
         <div class="jsec" style="margin:18px 0 8px;">B — Bakgrund</div>
-        <div class="field"><span class="label">Tidigare historik / komplikationer</span><textarea id="sbHistorik" rows="2"></textarea></div>
+        <div class="field"><span class="label">Tidigare historik / komplikationer</span><textarea id="sbHistorik" rows="2" placeholder="ex: Känd KOL sedan 2019, ingen tidigare sjukhusvistelse för detta."></textarea></div>
         <div class="grid2">
           <div class="field"><span class="label">Medicinering</span><input type="text" id="sbMedicinering"></div>
           <div class="field"><span class="label">Allergi</span><input type="text" id="sbAllergi"></div>
@@ -1850,7 +1855,7 @@ function formSBARForm(){
           <div class="field"><span class="label">Tidpunkt för överlämning</span><input type="time" id="sbOverlamning"></div>
           <div class="field"><span class="label">Utfärdat av</span><input type="text" id="sbUtfardat" value="${escapeHtml(me.namn)}"></div>
         </div>
-        <div class="field"><span class="label">Plan / Rekommendation</span><textarea id="sbPlan" rows="3"></textarea></div>
+        <div class="field"><span class="label">Plan / Rekommendation</span><textarea id="sbPlan" rows="3" placeholder="ex: Rekommenderas läkarbedömning inom 30 min, förslag på inhalationsbehandling vid ankomst."></textarea></div>
 
         <div style="display:flex;gap:8px;margin-top:8px;">
           <button class="btn" onclick="window.__formShowNew=null; renderPage();">Avbryt</button>
@@ -1926,7 +1931,8 @@ function formJournalForm(){
       <button class="btn btn-sm" style="margin-bottom:14px;" onclick="window.__formShowNew=null; renderPage();">← Tillbaka</button>
       <div class="card pad">
         <b style="font-size:15px;display:block;margin-bottom:4px;">Ambulansjournal</b>
-        <p class="page-sub" style="margin-bottom:16px;">Larm, patientbedömning, åtgärder och transport</p>
+        <p class="page-sub" style="margin-bottom:8px;">Larm, patientbedömning, åtgärder och transport</p>
+        <div class="mall-hint"><b>💡 Vad ska stå här?</b>Fyll i journalen för varje genomfört uppdrag med patientkontakt. Var konkret och saklig — undvik gissningar, skriv det du faktiskt observerat och gjort. Fälten under "Vitalparametrar" ska spegla första mätningen på plats om inget annat anges.</div>
 
         <div class="jsec">Uppdrag</div>
         <div class="field"><span class="label">Journalföring av</span><input type="text" id="jFor" list="dlPersonal" value="${escapeHtml(me.namn)}"></div>
@@ -1965,7 +1971,7 @@ function formJournalForm(){
         </div>
         <div class="grid2">
           <div class="field"><span class="label">Tid avfärd från plats</span><input type="time" id="jTidAvfard"></div>
-          <div class="field"><span class="label">Uppdragsnummer / Larm-ID</span><input type="text" id="jLarmId"></div>
+          <div class="field"><span class="label">Uppdragsnummer / Larm-ID</span><input type="text" id="jLarmId" placeholder="ex: 2026-04231"></div>
         </div>
 
         <div class="jsec">Patient</div>
@@ -1981,8 +1987,8 @@ function formJournalForm(){
           <select id="jRetts"><option>Röd</option><option>Orange</option><option>Gul</option><option>Grön</option></select>
         </div>
         <div class="grid2">
-          <div class="field"><span class="label">Huvudsymtom / Söksak</span><input type="text" id="jSymtom"></div>
-          <div class="field"><span class="label">Debut (tidpunkt/uppskattning)</span><input type="text" id="jDebut"></div>
+          <div class="field"><span class="label">Huvudsymtom / Söksak</span><input type="text" id="jSymtom" placeholder="ex: Bröstsmärta"></div>
+          <div class="field"><span class="label">Debut (tidpunkt/uppskattning)</span><input type="text" id="jDebut" placeholder="ex: Ca 45 min innan larm, plötsligt insättande"></div>
         </div>
 
         <div class="jsec">GCS — Glasgow Coma Scale</div>
@@ -2014,7 +2020,7 @@ function formJournalForm(){
         <div class="jsec">Smärta</div>
         <div class="grid2">
           <div class="field"><span class="label">NRS (0–10)</span><input type="number" min="0" max="10" id="jNrs"></div>
-          <div class="field"><span class="label">Smärtans lokalisation</span><input type="text" id="jSmartLok"></div>
+          <div class="field"><span class="label">Smärtans lokalisation</span><input type="text" id="jSmartLok" placeholder="ex: Centralt i bröstet, strålar mot vänster arm"></div>
         </div>
         <div class="field"><span class="label">Typ av smärta</span><select id="jSmartTyp"><option>Molande</option><option>Huggande</option><option>Tryckande</option><option>Brännande</option><option>Diffus</option></select></div>
 
@@ -2022,7 +2028,7 @@ function formJournalForm(){
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 14px;margin-bottom:10px;">
           ${SKADOR_LISTA.map(s=>`<label style="display:flex;align-items:center;gap:7px;font-size:12.5px;padding:3px 0;"><input type="checkbox" class="jSkada" value="${s}" ${s==='Fraktur'?'onchange="toggleFrakturField()"':''}> ${s}</label>`).join('')}
         </div>
-        <div class="field" id="jFrakturWrap" style="display:none;"><span class="label">Om fraktur — lokalisation</span><input type="text" id="jFrakturLok"></div>
+        <div class="field" id="jFrakturWrap" style="display:none;"><span class="label">Om fraktur — lokalisation</span><input type="text" id="jFrakturLok" placeholder="ex: Höger underarm"></div>
 
         <div class="jsec">Infart</div>
         <div class="field"><span class="label">Infart satt?</span><select id="jInfartSatt" onchange="refreshJournalForm()">
@@ -2032,21 +2038,25 @@ function formJournalForm(){
         <div id="jInfartWrap">${window.__journalInfartSatt==='Ja' ? renderInfartValjare() : ''}</div>
 
         <div class="jsec">Genomförda åtgärder</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 14px;margin-bottom:10px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 14px;margin-bottom:6px;">
           ${ATGARDER_LISTA.map(a=>`<label style="display:flex;align-items:center;gap:7px;font-size:12.5px;padding:3px 0;"><input type="checkbox" class="jAtgard" value="${a}"> ${a}</label>`).join('')}
+          <label style="display:flex;align-items:center;gap:7px;font-size:12.5px;padding:3px 0;"><input type="checkbox" id="jAtgardOvrigtCb" onchange="document.getElementById('jAtgardOvrigtWrap').style.display=this.checked?'block':'none';"> Övrigt</label>
         </div>
+        <div class="field" id="jAtgardOvrigtWrap" style="display:none;"><span class="label">Övrigt, ange vilken åtgärd</span><input type="text" id="jAtgardOvrigtText" placeholder="Beskriv åtgärden som utfördes..."></div>
 
         <div class="jsec">Administrerade läkemedel</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 14px;margin-bottom:10px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 14px;margin-bottom:6px;">
           ${LAKEMEDEL_LISTA.map(l=>`<label style="display:flex;align-items:center;gap:7px;font-size:12.5px;padding:3px 0;"><input type="checkbox" class="jLakemedel" value="${l}"> ${l}</label>`).join('')}
+          <label style="display:flex;align-items:center;gap:7px;font-size:12.5px;padding:3px 0;"><input type="checkbox" id="jLakemedelOvrigtCb" onchange="document.getElementById('jLakemedelOvrigtWrap').style.display=this.checked?'block':'none';"> Övrigt</label>
         </div>
-        <div class="field"><span class="label">Dos, administrationssätt och effekt</span><textarea id="jDosEffekt" rows="2"></textarea></div>
+        <div class="field" id="jLakemedelOvrigtWrap" style="display:none;"><span class="label">Övrigt, ange läkemedel</span><input type="text" id="jLakemedelOvrigtText" placeholder="Namn på läkemedlet..."></div>
+        <div class="field"><span class="label">Dos, administrationssätt och effekt</span><textarea id="jDosEffekt" rows="2" placeholder="ex: 5 mg iv, given långsamt. Effekt: smärtan minskade från NRS 8 till 4 inom 10 min."></textarea></div>
 
         <div class="jsec">Transport</div>
         <div class="field"><span class="label">Transporterad till</span><select id="jTransportTill">${JOURNAL_TRANSPORT.map(t=>`<option>${escapeHtml(t)}</option>`).join('')}</select></div>
         <div class="field"><span class="label">Transportprioritet</span><select id="jTransportPrio"><option>Akut (prio 1)</option><option>Snabb (prio 2)</option><option>Normal (prio 3)</option></select></div>
-        <div class="field"><span class="label">Överrapportering (SBAR eller motsvarande)</span><textarea id="jOverrapp" rows="2"></textarea></div>
-        <div class="field"><span class="label">Avvikelser / Övriga iakttagelser</span><textarea id="jAvvikelser" rows="2"></textarea></div>
+        <div class="field"><span class="label">Överrapportering (SBAR eller motsvarande)</span><textarea id="jOverrapp" rows="2" placeholder="ex: S: Bröstsmärta sedan 45 min. B: Hypertoni, ingen tidigare hjärtsjukdom. A: BT 145/90, puls 92, EKG utan ST-höjning. R: Övervakning, smärtlindring vb."></textarea></div>
+        <div class="field"><span class="label">Avvikelser / Övriga iakttagelser</span><textarea id="jAvvikelser" rows="2" placeholder="ex: Inga avvikelser. Eller: Fördröjd avfärd pga vägarbete på E6."></textarea></div>
 
         <div style="display:flex;gap:8px;margin-top:8px;">
           <button class="btn" onclick="window.__formShowNew=null; window.__journalInfartTyp=''; window.__journalInfartSatt=''; renderPage();">Avbryt</button>
@@ -2092,6 +2102,10 @@ function updateGcsSum(){
 function submitJournal(){
   const g = id=>{ const el=document.getElementById(id); return el? el.value : ''; };
   const checkedVals = cls => Array.from(document.querySelectorAll('.'+cls+':checked')).map(c=>c.value);
+  const atgarder = checkedVals('jAtgard');
+  if(document.getElementById('jAtgardOvrigtCb').checked && g('jAtgardOvrigtText').trim()) atgarder.push('Övrigt: '+g('jAtgardOvrigtText').trim());
+  const lakemedel = checkedVals('jLakemedel');
+  if(document.getElementById('jLakemedelOvrigtCb').checked && g('jLakemedelOvrigtText').trim()) lakemedel.push('Övrigt: '+g('jLakemedelOvrigtText').trim());
   let infart = null;
   if(g('jInfartSatt')==='Ja' && window.__journalInfartTyp){
     const conf = INFART_TYPER[window.__journalInfartTyp];
@@ -2111,7 +2125,7 @@ function submitJournal(){
     smarta:{nrs:g('jNrs'), lokalisation:g('jSmartLok'), typ:g('jSmartTyp')},
     skador: checkedVals('jSkada'), frakturLokalisation:g('jFrakturLok'),
     infart,
-    atgarder: checkedVals('jAtgard'), lakemedel: checkedVals('jLakemedel'), dosEffekt:g('jDosEffekt'),
+    atgarder, lakemedel, dosEffekt:g('jDosEffekt'),
     transportTill:g('jTransportTill'), transportPrio:g('jTransportPrio'), overrapportering:g('jOverrapp'), avvikelser:g('jAvvikelser'),
     av: currentUser().namn
   });
@@ -2135,12 +2149,13 @@ function formAkutjournalForm(){
       <button class="btn btn-sm" style="margin-bottom:14px;" onclick="window.__formShowNew=null; window.__akjMatningar=null; window.__akjLM=null; renderPage();">← Tillbaka</button>
       <div class="card pad">
         <b style="font-size:15px;display:block;margin-bottom:4px;">Akutjournal</b>
-        <p class="page-sub" style="margin-bottom:16px;">Triage och vitalparametrar vid ankomst till akutmottagning</p>
+        <p class="page-sub" style="margin-bottom:8px;">Triage och vitalparametrar vid ankomst till akutmottagning</p>
+        <div class="mall-hint"><b>💡 Vad ska stå här?</b>Fylls i vid ankomst till akutmottagning enligt NEWS2-triage. Lägg till en ny mätning under "Vitalparametrar" varje gång kontrollerna görs om — färgfälten (NEWS2 Prio, Slutgiltig prioritering) ska spegla den senaste bedömningen.</div>
 
         <div class="jsec" style="margin-top:0;">Mottagning</div>
         <div class="grid2">
-          <div class="field"><span class="label">Klinik</span><input type="text" id="akjKlinik"></div>
-          <div class="field"><span class="label">Rum/Plats</span><input type="text" id="akjRum"></div>
+          <div class="field"><span class="label">Klinik</span><input type="text" id="akjKlinik" placeholder="ex: Akutmottagningen NÄL"></div>
+          <div class="field"><span class="label">Rum/Plats</span><input type="text" id="akjRum" placeholder="ex: Rum 4"></div>
         </div>
         <div class="grid2">
           <div class="field"><span class="label">Ankomst sjukhus/VC, datum</span><input type="date" id="akjAnkDatum" value="${todayISO()}"></div>
@@ -2182,13 +2197,13 @@ function formAkutjournalForm(){
 
         <div class="jsec">Prioritering</div>
         <div class="field"><span class="label">Prioriteringssystem enligt</span><input type="text" id="akjPrioSystem" placeholder="ex: RETTS, WEST"></div>
-        <div class="field"><span class="label">Aktuellt</span><textarea id="akjAktuellt" rows="3" placeholder="Aktuellt tillstånd / anledning till besök"></textarea></div>
+        <div class="field"><span class="label">Aktuellt</span><textarea id="akjAktuellt" rows="3" placeholder="ex: 68-årig man med plötslig bröstsmärta sedan 1 timme, insatt av ambulans med misstänkt STEMI."></textarea></div>
         <div class="grid2">
-          <div class="field"><span class="label" style="color:var(--red);">RÖD — Varningssymtom</span><textarea id="akjVarnRod" rows="2"></textarea></div>
-          <div class="field"><span class="label" style="color:#c07a00;">ORANGE — Varningssymtom</span><textarea id="akjVarnOrange" rows="2"></textarea></div>
+          <div class="field"><span class="label" style="color:var(--red);">RÖD — Varningssymtom</span><textarea id="akjVarnRod" rows="2" placeholder="ex: Medvetandesänkning, andningsstopp — lämna tomt om inget föreligger"></textarea></div>
+          <div class="field"><span class="label" style="color:#c07a00;">ORANGE — Varningssymtom</span><textarea id="akjVarnOrange" rows="2" placeholder="ex: Kraftig smärta, avvikande vitalparametrar"></textarea></div>
         </div>
-        <div class="field"><span class="label" style="color:var(--amber);">GUL — Varningssymtom</span><textarea id="akjVarnGul" rows="2"></textarea></div>
-        <div class="field"><span class="label">Process</span><input type="text" id="akjProcess"></div>
+        <div class="field"><span class="label" style="color:var(--amber);">GUL — Varningssymtom</span><textarea id="akjVarnGul" rows="2" placeholder="ex: Måttlig smärta, lätt påverkad allmäntillstånd"></textarea></div>
+        <div class="field"><span class="label">Process</span><input type="text" id="akjProcess" placeholder="ex: Bröstsmärteprocessen"></div>
 
         <div class="jsec">Vitalparametrar (VP) &amp; NEWS2</div>
         <div id="akjMatningarWrap">${akjMatningHtml()}</div>
@@ -2200,7 +2215,7 @@ function formAkutjournalForm(){
           <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;"><input type="checkbox" id="akjEkgAkm"> EKG taget (AKM)</label>
           <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;"><input type="checkbox" id="akjPupillerUa"> Pupiller u.a.</label>
         </div>
-        <div class="field"><span class="label">Pupiller — avvikelse</span><input type="text" id="akjPupillerAvvikelse"></div>
+        <div class="field"><span class="label">Pupiller — avvikelse</span><input type="text" id="akjPupillerAvvikelse" placeholder="ex: Anisokori, vänster pupill vidgad"></div>
         <div class="grid2">
           <div class="field"><span class="label">Vikt (kg)</span><input type="number" id="akjVikt"></div>
           <div class="field"><span class="label">Längd (cm)</span><input type="number" id="akjLangd"></div>
@@ -2212,7 +2227,7 @@ function formAkutjournalForm(){
           <div class="field"><span class="label">NEWS2 Prio</span>${akjPrioSelect('akjNews2Prio','')}</div>
           <div class="field"><span class="label">Slutgiltig prioritering (ink. klinisk bedömning)</span>${akjPrioSelect('akjSlutPrio','')}</div>
         </div>
-        <div class="field"><span class="label">Klinisk bedömning — motivering</span><textarea id="akjKlinMotivering" rows="2"></textarea></div>
+        <div class="field"><span class="label">Klinisk bedömning — motivering</span><textarea id="akjKlinMotivering" rows="2" placeholder="ex: Nedjusterad från orange till gul efter smärtlindring, stabila vitalparametrar."></textarea></div>
         <div class="field"><span class="label">Omprioritering</span>${akjPrioSelect('akjOmprio','')}</div>
 
         <div class="jsec">Urinsticka / Odling / HCG / KAD</div>
@@ -2238,7 +2253,7 @@ function formAkutjournalForm(){
         </div>
         <div class="grid2">
           <div class="field"><span class="label">Tappad (ml)</span><input type="number" id="akjTappadMl"></div>
-          <div class="field"><span class="label">Kissat</span><input type="text" id="akjKissat"></div>
+          <div class="field"><span class="label">Kissat</span><input type="text" id="akjKissat" placeholder="ex: Ja, spontant, klar urin"></div>
         </div>
         <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:10px;">
           <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;"><input type="checkbox" id="akjUodlIkyl"> U-odling: I-kyl</label>
@@ -2272,7 +2287,7 @@ function formAkutjournalForm(){
         </div>
 
         <div class="jsec">Läkarordination på akuten</div>
-        <div class="field"><textarea id="akjLakarordination" rows="3"></textarea></div>
+        <div class="field"><textarea id="akjLakarordination" rows="3" placeholder="ex: EKG, troponin, smärtlindring vb, inläggning kardiologavdelning."></textarea></div>
         <div class="field"><span class="label">O₂ (liter/min)</span><input type="number" step="0.5" id="akjO2LiterMin"></div>
 
         <div id="akjLmWrap">${akjLmHtml()}</div>
@@ -3028,7 +3043,7 @@ function pageAnvandare(){
       ${DB.vantandeKonton.map(v=>{
         const p = v.personId? DB.personal.find(x=>x.id===v.personId) : null;
         return `<div class="list-row" style="display:flex;justify-content:space-between;align-items:center;">
-          <div><b>${escapeHtml(v.konto)}</b><div style="font-size:11.5px;color:var(--muted);">${p?'Kopplas till '+escapeHtml(p.namn):'Ej kopplad till personal'} · Ansökte ${new Date(v.datum).toLocaleString('sv-SE')}</div></div>
+          <div><b>${escapeHtml(v.konto)}</b> <span class="badge badge-blue" style="margin-left:4px;">Discord: ${escapeHtml(v.discord)||'—'}</span><div style="font-size:11.5px;color:var(--muted);">${p?'Kopplas till '+escapeHtml(p.namn):'Ej kopplad till personal'} · Ansökte ${new Date(v.datum).toLocaleString('sv-SE')}</div></div>
           <div style="display:flex;gap:6px;">
             <button class="btn btn-green btn-sm" onclick="godkannKonto('${v.id}')">Godkänn</button>
             <button class="btn btn-danger btn-sm" onclick="nekaKonto('${v.id}')">Neka</button>
@@ -3042,7 +3057,7 @@ function pageAnvandare(){
         const admin = !!DB.kontoAdmin[k];
         const ensamAdmin = admin && DB.inloggadeKonton.filter(x=>DB.kontoAdmin[x]).length===1;
         return `<div class="list-row" style="display:flex;justify-content:space-between;align-items:center;">
-          <div><b>${escapeHtml(k)}</b> ${admin?'<span class="badge badge-blue" style="margin-left:6px;">Admin</span>':''}<div style="font-size:11.5px;color:var(--muted);">${p?'Kopplad till '+escapeHtml(p.namn):'Ej kopplad till personal'}</div></div>
+          <div><b>${escapeHtml(k)}</b> ${admin?'<span class="badge badge-blue" style="margin-left:6px;">Admin</span>':''}<div style="font-size:11.5px;color:var(--muted);">${p?'Kopplad till '+escapeHtml(p.namn):'Ej kopplad till personal'}${DB.discordNamn[k]? ' · Discord: '+escapeHtml(DB.discordNamn[k]) : ''}</div></div>
           <div style="display:flex;gap:6px;">
             <button class="btn btn-sm" onclick="toggleKontoAdmin('${k}')" ${ensamAdmin?'disabled title="Minst ett konto måste vara admin"':''}>${admin?'Ta bort admin':'Gör till admin'}</button>
             <button class="btn btn-sm" onclick="resetLosenord('${k}')">Byt lösenord</button>
@@ -3079,9 +3094,10 @@ function exporteraBackup(){
 function addAnvandare(){
   const namn = prompt('Kontonamn (ex: förnamn.efternamn):'); if(!namn) return;
   if(DB.inloggadeKonton.includes(namn)){ toast('Kontot finns redan'); return; }
+  const discord = prompt('Discord-namn:'); if(!discord){ toast('Discord-namn krävs'); return; }
   const pass = prompt('Lösenord för kontot (kan lämnas tomt):','') || '';
   const admin = confirm('Ska kontot ha adminbehörighet?');
-  DB.inloggadeKonton.push(namn); DB.losenord[namn] = pass; DB.kontoAdmin[namn] = admin;
+  DB.inloggadeKonton.push(namn); DB.losenord[namn] = pass; DB.kontoAdmin[namn] = admin; DB.discordNamn[namn] = discord;
   saveDB(); renderPage(); toast('Konto skapat');
 }
 function godkannKonto(vid){
@@ -3090,6 +3106,7 @@ function godkannKonto(vid){
   DB.inloggadeKonton.push(v.konto);
   DB.losenord[v.konto] = v.losenord;
   DB.kontoAdmin[v.konto] = false;
+  DB.discordNamn[v.konto] = v.discord||'';
   if(v.personId){ const p = DB.personal.find(x=>x.id===v.personId); if(p) p.kopplatKonto = v.konto; }
   DB.vantandeKonton = DB.vantandeKonton.filter(x=>x.id!==vid);
   DB.notiser.forEach(n=>{ if(n.vantandeId===vid) n.status='hanterad'; });
@@ -3116,6 +3133,7 @@ function delAnvandare(k){
   DB.inloggadeKonton = DB.inloggadeKonton.filter(x=>x!==k);
   delete DB.losenord[k];
   delete DB.kontoAdmin[k];
+  delete DB.discordNamn[k];
   DB.personal.forEach(p=>{ if(p.kopplatKonto===k) p.kopplatKonto=''; });
   saveDB(); renderPage();
 }
@@ -3451,6 +3469,8 @@ function renderLoginScreen(){
             ` : `
               <span class="label">Kontonamn</span>
               <div class="field"><input type="text" id="newKontoNamn" placeholder="ex: förnamn.efternamn"></div>
+              <span class="label">Discord-namn</span>
+              <div class="field"><input type="text" id="newKontoDiscord" placeholder="ex: anvandare eller anvandare#1234"></div>
               <span class="label">Lösenord</span>
               <div class="field"><input type="password" id="newKontoLosen" placeholder="Välj ett lösenord"></div>
               <span class="label">Koppla till personal (valfritt)</span>
@@ -3500,9 +3520,11 @@ function doLogin(){
 }
 function doCreateAccount(){
   const namn = (document.getElementById('newKontoNamn').value||'').trim();
+  const discord = (document.getElementById('newKontoDiscord').value||'').trim();
   const pass = document.getElementById('newKontoLosen').value||'';
   const personId = document.getElementById('newKontoPerson').value;
   if(!namn){ loginError='Ange ett kontonamn.'; renderLoginScreen(); return; }
+  if(!discord){ loginError='Ange ditt Discord-namn.'; renderLoginScreen(); return; }
   if(DB.inloggadeKonton.includes(namn) || DB.vantandeKonton.some(v=>v.konto===namn)){ loginError='Kontot finns redan, eller väntar redan på godkännande.'; renderLoginScreen(); return; }
   const blirForstaKonto = DB.inloggadeKonton.length===0 && DB.vantandeKonton.length===0;
   if(blirForstaKonto){
@@ -3510,6 +3532,7 @@ function doCreateAccount(){
     DB.inloggadeKonton.push(namn);
     DB.losenord[namn] = pass;
     DB.kontoAdmin[namn] = true;
+    DB.discordNamn[namn] = discord;
     if(personId){ const p = DB.personal.find(x=>x.id===personId); if(p) p.kopplatKonto = namn; }
     saveDB();
     SESSION = {konto:namn}; saveSession();
@@ -3517,9 +3540,9 @@ function doCreateAccount(){
     return;
   }
   const vid = uid('vk');
-  DB.vantandeKonton.push({id:vid, konto:namn, losenord:pass, personId, datum:new Date().toISOString()});
+  DB.vantandeKonton.push({id:vid, konto:namn, losenord:pass, discord, personId, datum:new Date().toISOString()});
   DB.notiser.push({id:uid('n'), typ:'kontoansokan', titel:'Ny kontoansökan: '+namn,
-    text:'"'+namn+'" har begärt ett konto och väntar på godkännande.',
+    text:'"'+namn+'" (Discord: '+discord+') har begärt ett konto och väntar på godkännande.',
     datum:new Date().toISOString(), lest:false, vantandeId:vid, status:'ny'});
   saveDB();
   loginMode='valj'; loginError=''; loginInfo='Ditt konto har skickats in och väntar på godkännande från en administratör. Du kan logga in när det är godkänt.';

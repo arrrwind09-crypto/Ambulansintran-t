@@ -3017,6 +3017,11 @@ function pageAnvandare(){
     <div class="page-head"><div><h1 class="page-title">Användare</h1><p class="page-sub">Inloggningskonton, kopplad personal och adminbehörighet</p></div>
       <button class="btn btn-primary" onclick="addAnvandare()">+ Nytt konto</button>
     </div>
+    <div class="card pad" style="margin-bottom:16px;">
+      <b style="display:block;margin-bottom:6px;">Systembackup</b>
+      <p style="font-size:12.5px;color:var(--muted);margin:0 0 10px;">All data i systemet ligger i en delad molnlagring utan egen historik. Ladda ner en kopia som fil då och då, så finns något att återgå till om molnlagringen någonsin skulle bli tom eller gå förlorad.</p>
+      <button class="btn btn-sm" onclick="exporteraBackup()">⬇ Ladda ner backup (.json)</button>
+    </div>
     ${DB.vantandeKonton.length? `
     <div class="card pad" style="margin-bottom:16px;border-top-color:var(--amber);">
       <b style="display:block;margin-bottom:10px;">Väntande kontoansökningar · ${DB.vantandeKonton.length} st</b>
@@ -3056,6 +3061,20 @@ function toggleKontoAdmin(k){
   }
   DB.kontoAdmin[k] = !nu;
   saveDB(); renderPage(); toast(nu? 'Adminbehörighet borttagen' : 'Adminbehörighet tillagd');
+}
+function exporteraBackup(){
+  if(!requireAdmin()) return;
+  const data = JSON.stringify(DB, null, 2);
+  const blob = new Blob([data], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'ambulansintranat-backup-'+todayISO()+'.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  toast('Backup nedladdad');
 }
 function addAnvandare(){
   const namn = prompt('Kontonamn (ex: förnamn.efternamn):'); if(!namn) return;

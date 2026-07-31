@@ -706,6 +706,7 @@ function seed(){
     infoInlagg:[],
     sbarRapporter:[],
     journalRapporter:[],
+    akutjournalRapporter:[],
     schema:{dagar:['Sön','Tis','Tor'], timme:19, minut:0},
     adresser:['Storgatan 12'],
     inloggadeKonton:['karl.svensson'],
@@ -1707,10 +1708,12 @@ function pageFormular(){
   if(active==='skada') return formularForm();
   if(active==='sbar') return formSBARForm();
   if(active==='journal') return formJournalForm();
+  if(active==='akutjournal') return formAkutjournalForm();
   const formularTyper = [
     {id:'skada', ikon:'⚠️', titel:'Skade-/Olycksrapport', beskrivning:'Rapportera skador på fordon, utrustning eller personal i samband med ett uppdrag.'},
     {id:'sbar', ikon:'📋', titel:'SBAR-rapport', beskrivning:'Strukturerad överrapportering — Situation, Bakgrund, Aktuellt tillstånd, Rekommendation.'},
     {id:'journal', ikon:'📝', titel:'Ambulansjournal', beskrivning:'Fullständig patientjournal för ett genomfört ambulansuppdrag.'},
+    {id:'akutjournal', ikon:'🏥', titel:'Akutjournal', beskrivning:'Triage och vitalparametrar vid ankomst till akutmottagning, enligt NEWS2.'},
   ];
   return `
     <div class="page-head"><div><h1 class="page-title">Formulär</h1><p class="page-sub">Rapporter och journalföring</p></div></div>
@@ -2109,6 +2112,277 @@ function submitJournal(){
   saveDB();
   window.__formShowNew=null; window.__journalInfartTyp=''; window.__journalInfartSatt=''; window.__journalSpecial='Ingen';
   renderPage(); toast('Journal inskickad');
+}
+
+/* ================= AKUTJOURNAL (NEWS2-triage) ================= */
+const AKJ_ANAMNES = ['Tid frisk','Diabetes ins/tabl','Blödningsbenäg/AK-Behandl','Kardiovaskulär sjukdom','Cerebrovaskulär sjukdom','Endokrin sjukdom','Immunsuppression','Njursjukdom','Leversjukdom','Lungsjukdom','Malignitet'];
+const AKJ_PRIOFARGER = ['','Röd','Orange','Gul','Grön','Blå'];
+const AKJ_PRIOFARG_CLS = {Röd:'badge-red', Orange:'badge-amber', Gul:'badge-amber', Grön:'badge-green', Blå:'badge-blue'};
+function akjPrioSelect(id, val){
+  return `<select id="${id}">${AKJ_PRIOFARGER.map(f=>`<option ${val===f?'selected':''}>${f||'— Ej satt —'}</option>`).join('')}</select>`;
+}
+function formAkutjournalForm(){
+  window.__akjMatningar = window.__akjMatningar || [{}];
+  window.__akjLM = window.__akjLM || [{}];
+  return `
+    <div style="max-width:680px;">
+      <button class="btn btn-sm" style="margin-bottom:14px;" onclick="window.__formShowNew=null; window.__akjMatningar=null; window.__akjLM=null; renderPage();">← Tillbaka</button>
+      <div class="card pad">
+        <b style="font-size:15px;display:block;margin-bottom:4px;">Akutjournal</b>
+        <p class="page-sub" style="margin-bottom:16px;">Triage och vitalparametrar vid ankomst till akutmottagning</p>
+
+        <div class="jsec" style="margin-top:0;">Mottagning</div>
+        <div class="grid2">
+          <div class="field"><span class="label">Klinik</span><input type="text" id="akjKlinik"></div>
+          <div class="field"><span class="label">Rum/Plats</span><input type="text" id="akjRum"></div>
+        </div>
+        <div class="grid2">
+          <div class="field"><span class="label">Ankomst sjukhus/VC, datum</span><input type="date" id="akjAnkDatum" value="${todayISO()}"></div>
+          <div class="field"><span class="label">Ankomst sjukhus/VC, kl</span><input type="time" id="akjAnkKl"></div>
+        </div>
+        <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:10px;">
+          <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;"><input type="checkbox" id="akjLakartriage"> Läkartriage</label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;"><input type="checkbox" id="akjRemiss"> Remiss</label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;"><input type="checkbox" id="akjTolkbehov"> Tolkbehov/språk</label>
+          <input type="text" id="akjTolkSprak" placeholder="Vilket språk?" style="flex:1;min-width:120px;padding:6px 9px;border:1px solid var(--border);border-radius:4px;">
+        </div>
+        <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:10px;">
+          <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;"><input type="checkbox" id="akjIdKontroll"> Id-kontroll</label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;"><input type="checkbox" id="akjIdBand"> Id-band</label>
+          <div class="field" style="margin:0;"><span class="label">Sekretess</span><select id="akjSekretess"><option>Nej</option><option>Ja</option></select></div>
+        </div>
+        <div class="grid2">
+          <div class="field"><span class="label">Larmtid</span><input type="time" id="akjLarmtid"></div>
+          <div class="field"><span class="label">Amb nr</span><input type="text" id="akjAmbNr"></div>
+        </div>
+        <div class="grid2">
+          <div class="field"><span class="label">Ärende nr</span><input type="text" id="akjArendeNr"></div>
+          <div class="field"><span class="label">Vårdare 1</span><input type="text" id="akjVardare1" list="dlPersonal"></div>
+        </div>
+        ${personDatalist('dlPersonal')}
+
+        <div class="jsec">Riskfaktorer / kända sjukdomar</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 14px;margin-bottom:10px;">
+          ${AKJ_ANAMNES.map(a=>`<label style="display:flex;align-items:center;gap:7px;font-size:12.5px;padding:3px 0;"><input type="checkbox" class="akjAnamnes" value="${a}"> ${a}</label>`).join('')}
+        </div>
+        <div class="grid2">
+          <div class="field"><span class="label">Överkänslighet</span><select id="akjOverkanslighet"><option>Ingen känd</option><option>Ja</option></select></div>
+          <div class="field"><span class="label">Blodsmitta</span><select id="akjBlodsmitta"><option>Ingen känd</option><option>Ja</option></select></div>
+        </div>
+        <div class="grid2">
+          <div class="field"><span class="label">Misstänkt G-E</span><select id="akjMisstGE"><option>Nej</option><option>Ja</option></select></div>
+          <div class="field"><span class="label">MRSA/ESBL/VRE</span><select id="akjMrsa"><option>Ingen känd</option><option>Ja</option></select></div>
+        </div>
+
+        <div class="jsec">Prioritering</div>
+        <div class="field"><span class="label">Prioriteringssystem enligt</span><input type="text" id="akjPrioSystem" placeholder="ex: RETTS, WEST"></div>
+        <div class="field"><span class="label">Aktuellt</span><textarea id="akjAktuellt" rows="3" placeholder="Aktuellt tillstånd / anledning till besök"></textarea></div>
+        <div class="grid2">
+          <div class="field"><span class="label" style="color:var(--red);">RÖD — Varningssymtom</span><textarea id="akjVarnRod" rows="2"></textarea></div>
+          <div class="field"><span class="label" style="color:#c07a00;">ORANGE — Varningssymtom</span><textarea id="akjVarnOrange" rows="2"></textarea></div>
+        </div>
+        <div class="field"><span class="label" style="color:var(--amber);">GUL — Varningssymtom</span><textarea id="akjVarnGul" rows="2"></textarea></div>
+        <div class="field"><span class="label">Process</span><input type="text" id="akjProcess"></div>
+
+        <div class="jsec">Vitalparametrar (VP) &amp; NEWS2</div>
+        <div id="akjMatningarWrap">${akjMatningHtml()}</div>
+        <button class="btn btn-sm" onclick="akjAddMatning()">+ Lägg till mätning</button>
+
+        <div class="jsec">EKG, pupiller &amp; övrigt</div>
+        <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:10px;">
+          <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;"><input type="checkbox" id="akjEkgAmb"> EKG taget (AMB)</label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;"><input type="checkbox" id="akjEkgAkm"> EKG taget (AKM)</label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;"><input type="checkbox" id="akjPupillerUa"> Pupiller u.a.</label>
+        </div>
+        <div class="field"><span class="label">Pupiller — avvikelse</span><input type="text" id="akjPupillerAvvikelse"></div>
+        <div class="grid2">
+          <div class="field"><span class="label">Vikt (kg)</span><input type="number" id="akjVikt"></div>
+          <div class="field"><span class="label">Längd (cm)</span><input type="number" id="akjLangd"></div>
+        </div>
+        <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;margin-bottom:10px;"><input type="checkbox" id="akjRtgSkriven"> Ssk Rtg-remiss skriven</label>
+
+        <div class="jsec">Prioritering &amp; omprioritering</div>
+        <div class="grid2">
+          <div class="field"><span class="label">NEWS2 Prio</span>${akjPrioSelect('akjNews2Prio','')}</div>
+          <div class="field"><span class="label">Slutgiltig prioritering (ink. klinisk bedömning)</span>${akjPrioSelect('akjSlutPrio','')}</div>
+        </div>
+        <div class="field"><span class="label">Klinisk bedömning — motivering</span><textarea id="akjKlinMotivering" rows="2"></textarea></div>
+        <div class="field"><span class="label">Omprioritering</span>${akjPrioSelect('akjOmprio','')}</div>
+
+        <div class="jsec">Urinsticka / Odling / HCG / KAD</div>
+        <div class="grid2">
+          <div class="field"><span class="label">Glukos</span><input type="text" id="akjUGlukos"></div>
+          <div class="field"><span class="label">Ketoner</span><input type="text" id="akjUKetoner"></div>
+        </div>
+        <div class="grid2">
+          <div class="field"><span class="label">Blod</span><input type="text" id="akjUBlod"></div>
+          <div class="field"><span class="label">Ph</span><input type="text" id="akjUPh"></div>
+        </div>
+        <div class="grid2">
+          <div class="field"><span class="label">Proteiner</span><input type="text" id="akjUProteiner"></div>
+          <div class="field"><span class="label">Nitrit</span><input type="text" id="akjUNitrit"></div>
+        </div>
+        <div class="grid2">
+          <div class="field"><span class="label">Leukocyt</span><input type="text" id="akjULeukocyt"></div>
+          <div class="field"><span class="label">U-Hcg</span><input type="text" id="akjUHcg"></div>
+        </div>
+        <div class="grid2">
+          <div class="field"><span class="label">Bladderscan (ml)</span><input type="number" id="akjBladderMl"></div>
+          <div class="field"><span class="label">KAD nr / Kuff (ml)</span><input type="text" id="akjKadNr"></div>
+        </div>
+        <div class="grid2">
+          <div class="field"><span class="label">Tappad (ml)</span><input type="number" id="akjTappadMl"></div>
+          <div class="field"><span class="label">Kissat</span><input type="text" id="akjKissat"></div>
+        </div>
+        <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:10px;">
+          <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;"><input type="checkbox" id="akjUodlIkyl"> U-odling: I-kyl</label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;"><input type="checkbox" id="akjUodlSkickad"> U-odling: Skickad</label>
+        </div>
+
+        <div class="jsec">Prover</div>
+        <div class="grid2">
+          <div class="field"><span class="label">P-glukos (mmol/L)</span><input type="number" step="0.1" id="akjPGlukos"></div>
+          <div class="field"><span class="label">B-ketoner</span><input type="number" step="0.1" id="akjBKetoner"></div>
+        </div>
+        <div class="grid2">
+          <div class="field"><span class="label">Hb (g/L)</span><input type="number" id="akjHb"></div>
+          <div class="field"><span class="label">CRP (mg/L)</span><input type="number" id="akjCrp"></div>
+        </div>
+        <div class="grid2">
+          <div class="field"><span class="label">Strep-A</span><select id="akjStrepA"><option value="">Ej taget</option><option>Pos</option><option>Neg</option></select></div>
+          <div class="field"><span class="label">F-Hb</span><select id="akjFHb"><option value="">Ej taget</option><option>Pos</option><option>Neg</option></select></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 14px;margin-bottom:10px;">
+          <label style="display:flex;align-items:center;gap:7px;font-size:12.5px;"><input type="checkbox" id="akjBlododl1"> Blododling, 1 kl</label>
+          <label style="display:flex;align-items:center;gap:7px;font-size:12.5px;"><input type="checkbox" id="akjBlododl2"> Blododling, 2 kl</label>
+          <label style="display:flex;align-items:center;gap:7px;font-size:12.5px;"><input type="checkbox" id="akjSarodling"> Sårodling</label>
+          <label style="display:flex;align-items:center;gap:7px;font-size:12.5px;"><input type="checkbox" id="akjSvalgodling"> Svalgodling</label>
+          <label style="display:flex;align-items:center;gap:7px;font-size:12.5px;"><input type="checkbox" id="akjSputumodling"> Sputumodling</label>
+          <label style="display:flex;align-items:center;gap:7px;font-size:12.5px;"><input type="checkbox" id="akjNph"> NPH</label>
+          <label style="display:flex;align-items:center;gap:7px;font-size:12.5px;"><input type="checkbox" id="akjCovidAntigen"> Covid Antigen</label>
+          <label style="display:flex;align-items:center;gap:7px;font-size:12.5px;"><input type="checkbox" id="akjCovidPcr"> Covid PCR/Infl/RS</label>
+          <label style="display:flex;align-items:center;gap:7px;font-size:12.5px;"><input type="checkbox" id="akjBlodgrupp"> Blodgrupp taget</label>
+          <label style="display:flex;align-items:center;gap:7px;font-size:12.5px;"><input type="checkbox" id="akjBastest"> Bastest taget</label>
+        </div>
+
+        <div class="jsec">Läkarordination på akuten</div>
+        <div class="field"><textarea id="akjLakarordination" rows="3"></textarea></div>
+        <div class="field"><span class="label">O₂ (liter/min)</span><input type="number" step="0.5" id="akjO2LiterMin"></div>
+
+        <div id="akjLmWrap">${akjLmHtml()}</div>
+        <button class="btn btn-sm" onclick="akjAddLM()">+ Lägg till läkemedelsordination</button>
+
+        <div style="display:flex;gap:8px;margin-top:16px;">
+          <button class="btn" onclick="window.__formShowNew=null; window.__akjMatningar=null; window.__akjLM=null; renderPage();">Avbryt</button>
+          <button class="btn btn-primary" onclick="submitAkutjournal()">Skicka in akutjournal</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+function akjMatningHtml(){
+  return window.__akjMatningar.map((m,i)=>`
+    <div class="card pad" style="margin-bottom:10px;background:#fafbfc;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <b style="font-size:12.5px;">Mätning ${i+1}</b>
+        ${window.__akjMatningar.length>1? `<button class="btn btn-sm btn-danger" onclick="akjRemoveMatning(${i})">Ta bort</button>`:''}
+      </div>
+      <div class="grid2">
+        <div class="field"><span class="label">Kl</span><input type="time" id="akjMat_${i}_tid" value="${escapeHtml(m.tid||'')}"></div>
+        <div class="field"><span class="label">AF (/min)</span><input type="number" id="akjMat_${i}_af" value="${escapeHtml(m.af||'')}"></div>
+      </div>
+      <div class="grid2">
+        <div class="field"><span class="label">SpO₂ (%)</span><input type="number" id="akjMat_${i}_spo2" value="${escapeHtml(m.spo2||'')}"></div>
+        <div class="field"><span class="label">Syrgas/Luft</span><select id="akjMat_${i}_syrgas"><option ${m.syrgas==='Luft'||!m.syrgas?'selected':''}>Luft</option><option ${m.syrgas==='Syrgas'?'selected':''}>Syrgas</option></select></div>
+      </div>
+      <div class="grid2">
+        <div class="field"><span class="label">BT syst./diast. (mmHg)</span><input type="text" id="akjMat_${i}_bt" placeholder="120/80" value="${escapeHtml(m.bt||'')}"></div>
+        <div class="field"><span class="label">Puls (/min)</span><input type="number" id="akjMat_${i}_puls" value="${escapeHtml(m.puls||'')}"></div>
+      </div>
+      <div class="grid2">
+        <div class="field"><span class="label">ACVPU</span><select id="akjMat_${i}_acvpu">${['A','C','V','P','U'].map(o=>`<option ${m.acvpu===o||(!m.acvpu&&o==='A')?'selected':''}>${o}</option>`).join('')}</select></div>
+        <div class="field"><span class="label">Temp (°C)</span><input type="number" step="0.1" id="akjMat_${i}_temp" value="${escapeHtml(m.temp||'')}"></div>
+      </div>
+      <div class="field"><span class="label">NEWS2-poäng</span><input type="number" id="akjMat_${i}_news2" value="${escapeHtml(m.news2||'')}"></div>
+    </div>`).join('');
+}
+function akjLmHtml(){
+  return window.__akjLM.map((l,i)=>`
+    <div class="card pad" style="margin-bottom:10px;background:#fafbfc;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <b style="font-size:12.5px;">Läkemedelsordination ${i+1}</b>
+        ${window.__akjLM.length>1? `<button class="btn btn-sm btn-danger" onclick="akjRemoveLM(${i})">Ta bort</button>`:''}
+      </div>
+      <div class="grid2">
+        <div class="field"><span class="label">Läkemedel</span><input type="text" id="akjLm_${i}_lak" value="${escapeHtml(l.lak||'')}"></div>
+        <div class="field"><span class="label">Dos</span><input type="text" id="akjLm_${i}_dos" value="${escapeHtml(l.dos||'')}"></div>
+      </div>
+      <div class="grid2">
+        <div class="field"><span class="label">Administrationssätt</span><input type="text" id="akjLm_${i}_adm" value="${escapeHtml(l.adm||'')}"></div>
+        <div class="field"><span class="label">Kl</span><input type="time" id="akjLm_${i}_kl" value="${escapeHtml(l.kl||'')}"></div>
+      </div>
+      <div class="grid2">
+        <div class="field"><span class="label">Ssk (sign)</span><input type="text" id="akjLm_${i}_ssk" list="dlPersonal" value="${escapeHtml(l.ssk||'')}"></div>
+        <div class="field"><span class="label">Resultat</span><input type="text" id="akjLm_${i}_resultat" value="${escapeHtml(l.resultat||'')}"></div>
+      </div>
+    </div>`).join('');
+}
+function akjSyncMatningar(){
+  const g = id=>{ const el=document.getElementById(id); return el? el.value : ''; };
+  window.__akjMatningar.forEach((m,i)=>{
+    m.tid=g('akjMat_'+i+'_tid'); m.af=g('akjMat_'+i+'_af'); m.spo2=g('akjMat_'+i+'_spo2'); m.syrgas=g('akjMat_'+i+'_syrgas');
+    m.bt=g('akjMat_'+i+'_bt'); m.puls=g('akjMat_'+i+'_puls'); m.acvpu=g('akjMat_'+i+'_acvpu'); m.temp=g('akjMat_'+i+'_temp'); m.news2=g('akjMat_'+i+'_news2');
+  });
+}
+function akjSyncLM(){
+  const g = id=>{ const el=document.getElementById(id); return el? el.value : ''; };
+  window.__akjLM.forEach((l,i)=>{
+    l.lak=g('akjLm_'+i+'_lak'); l.dos=g('akjLm_'+i+'_dos'); l.adm=g('akjLm_'+i+'_adm'); l.kl=g('akjLm_'+i+'_kl'); l.ssk=g('akjLm_'+i+'_ssk'); l.resultat=g('akjLm_'+i+'_resultat');
+  });
+}
+function akjAddMatning(){ akjSyncMatningar(); window.__akjMatningar.push({}); document.getElementById('akjMatningarWrap').innerHTML = akjMatningHtml(); }
+function akjRemoveMatning(i){ akjSyncMatningar(); window.__akjMatningar.splice(i,1); document.getElementById('akjMatningarWrap').innerHTML = akjMatningHtml(); }
+function akjAddLM(){ akjSyncLM(); window.__akjLM.push({}); document.getElementById('akjLmWrap').innerHTML = akjLmHtml(); }
+function akjRemoveLM(i){ akjSyncLM(); window.__akjLM.splice(i,1); document.getElementById('akjLmWrap').innerHTML = akjLmHtml(); }
+function submitAkutjournal(){
+  const g = id=>{ const el=document.getElementById(id); return el? el.value : ''; };
+  const c = id=>{ const el=document.getElementById(id); return el? el.checked : false; };
+  const checkedVals = cls => Array.from(document.querySelectorAll('.'+cls+':checked')).map(x=>x.value);
+  const matningar = window.__akjMatningar.map((_,i)=>({
+    tid:g('akjMat_'+i+'_tid'), af:g('akjMat_'+i+'_af'), spo2:g('akjMat_'+i+'_spo2'), syrgas:g('akjMat_'+i+'_syrgas'),
+    bt:g('akjMat_'+i+'_bt'), puls:g('akjMat_'+i+'_puls'), acvpu:g('akjMat_'+i+'_acvpu'), temp:g('akjMat_'+i+'_temp'), news2:g('akjMat_'+i+'_news2')
+  }));
+  const lakemedel = window.__akjLM.map((_,i)=>({
+    lak:g('akjLm_'+i+'_lak'), dos:g('akjLm_'+i+'_dos'), adm:g('akjLm_'+i+'_adm'), kl:g('akjLm_'+i+'_kl'), ssk:g('akjLm_'+i+'_ssk'), resultat:g('akjLm_'+i+'_resultat')
+  }));
+  DB.akutjournalRapporter.push({
+    id:uid('akj'), datum:new Date().toISOString(),
+    klinik:g('akjKlinik'), rumPlats:g('akjRum'), ankomstDatum:g('akjAnkDatum'), ankomstKl:g('akjAnkKl'),
+    lakartriage:c('akjLakartriage'), remiss:c('akjRemiss'), tolkbehov:c('akjTolkbehov'), tolkSprak:g('akjTolkSprak'),
+    idKontroll:c('akjIdKontroll'), idBand:c('akjIdBand'), sekretess:g('akjSekretess'),
+    larmtid:g('akjLarmtid'), ambNr:g('akjAmbNr'), arendeNr:g('akjArendeNr'), vardare1:g('akjVardare1'),
+    anamnes:checkedVals('akjAnamnes'),
+    overkanslighet:g('akjOverkanslighet'), blodsmitta:g('akjBlodsmitta'), misstankGE:g('akjMisstGE'), mrsaEsblVre:g('akjMrsa'),
+    prioSystem:g('akjPrioSystem'), aktuellt:g('akjAktuellt'),
+    varnRod:g('akjVarnRod'), varnOrange:g('akjVarnOrange'), varnGul:g('akjVarnGul'), process:g('akjProcess'),
+    matningar,
+    ekgAmb:c('akjEkgAmb'), ekgAkm:c('akjEkgAkm'), pupillerUa:c('akjPupillerUa'), pupillerAvvikelse:g('akjPupillerAvvikelse'),
+    vikt:g('akjVikt'), langd:g('akjLangd'), rtgSkriven:c('akjRtgSkriven'),
+    news2Prio:g('akjNews2Prio'), slutPrio:g('akjSlutPrio'), klinMotivering:g('akjKlinMotivering'), omprio:g('akjOmprio'),
+    urinsticka:{glukos:g('akjUGlukos'), ketoner:g('akjUKetoner'), blod:g('akjUBlod'), ph:g('akjUPh'), proteiner:g('akjUProteiner'),
+      nitrit:g('akjUNitrit'), leukocyt:g('akjULeukocyt'), uHcg:g('akjUHcg'), bladderMl:g('akjBladderMl'), kadNr:g('akjKadNr'),
+      tappadMl:g('akjTappadMl'), kissat:g('akjKissat'), iKyl:c('akjUodlIkyl'), skickad:c('akjUodlSkickad')},
+    prover:{pGlukos:g('akjPGlukos'), bKetoner:g('akjBKetoner'), hb:g('akjHb'), crp:g('akjCrp'), strepA:g('akjStrepA'), fHb:g('akjFHb'),
+      blododl1:c('akjBlododl1'), blododl2:c('akjBlododl2'), sarodling:c('akjSarodling'), svalgodling:c('akjSvalgodling'),
+      sputumodling:c('akjSputumodling'), nph:c('akjNph'), covidAntigen:c('akjCovidAntigen'), covidPcr:c('akjCovidPcr'),
+      blodgrupp:c('akjBlodgrupp'), bastest:c('akjBastest')},
+    lakarordination:g('akjLakarordination'), o2LiterMin:g('akjO2LiterMin'),
+    lakemedelsordinationer:lakemedel,
+    av: currentUser().namn
+  });
+  saveDB();
+  window.__formShowNew=null; window.__akjMatningar=null; window.__akjLM=null;
+  renderPage(); toast('Akutjournal inskickad');
 }
 
 /* ================= FORDON ================= */
@@ -2853,18 +3127,21 @@ function pageInskickade(){
   const skador = DB.formular.map(f=>({...f, __typ:'skada'}));
   const sbars = DB.sbarRapporter.map(f=>({...f, __typ:'sbar'}));
   const journaler = DB.journalRapporter.map(f=>({...f, __typ:'journal'}));
+  const akutjournaler = DB.akutjournalRapporter.map(f=>({...f, __typ:'akutjournal'}));
   let list = [];
-  if(inskickadeKategori==='Alla') list = [...skador, ...sbars, ...journaler];
+  if(inskickadeKategori==='Alla') list = [...skador, ...sbars, ...journaler, ...akutjournaler];
   else if(inskickadeKategori==='Skaderapporter') list = skador;
   else if(inskickadeKategori==='SBAR') list = sbars;
   else if(inskickadeKategori==='Journal') list = journaler;
+  else if(inskickadeKategori==='Akutjournal') list = akutjournaler;
   if(inskickadeKategori==='Skaderapporter' && inskickadeStatusFilter!=='Alla') list = list.filter(f=>f.status===inskickadeStatusFilter);
   list = list.slice().sort((a,b)=> (b.datum||'').localeCompare(a.datum||''));
+  const kategoriAntal = {Skaderapporter:skador.length, SBAR:sbars.length, Journal:journaler.length, Akutjournal:akutjournaler.length};
 
   return `
     <div class="page-head"><div><h1 class="page-title">Inskickade formulär</h1><p class="page-sub">Alla inlämnade formulär från personalen</p></div></div>
     <div class="tabbar">
-      ${['Alla','Skaderapporter','SBAR','Journal'].map(k=>`<div class="tab ${inskickadeKategori===k?'active':''}" onclick="inskickadeKategori='${k}';renderPage();">${k}${k==='Alla'?'':' ('+(k==='Skaderapporter'?skador.length:k==='SBAR'?sbars.length:journaler.length)+')'}</div>`).join('')}
+      ${['Alla','Skaderapporter','SBAR','Journal','Akutjournal'].map(k=>`<div class="tab ${inskickadeKategori===k?'active':''}" onclick="inskickadeKategori='${k}';renderPage();">${k}${k==='Alla'?'':' ('+kategoriAntal[k]+')'}</div>`).join('')}
     </div>
     ${inskickadeKategori==='Skaderapporter' ? `
     <div class="tabbar">${['Inkomna','Pågående','Avslutade','Alla'].map(s=>`<div class="tab ${inskickadeStatusFilter===(s==='Inkomna'?'Inkommen':s)?'active':''}" onclick="inskickadeStatusFilter='${s==='Inkomna'?'Inkommen':s}';renderPage();">${s}</div>`).join('')}</div>
@@ -2901,6 +3178,7 @@ function pageInskickade(){
               </div>
             </div>`;
           }
+          if(f.__typ==='journal'){
           return `<div class="list-row" style="display:flex;justify-content:space-between;align-items:center;padding:14px 16px;">
             <div>
               <span class="badge badge-green" style="margin-right:8px;">Journal</span>
@@ -2911,6 +3189,19 @@ function pageInskickade(){
               <span class="badge ${f.patient&&f.patient.retts==='Röd'?'badge-red':f.patient&&f.patient.retts==='Orange'?'badge-amber':'badge-gray'}">${escapeHtml((f.patient&&f.patient.retts)||'')}</span>
               <button class="btn btn-primary btn-sm" onclick="openHanteraJournal('${f.id}')">Visa</button>
               <button class="btn btn-danger btn-sm" onclick="delJournal('${f.id}')">Ta bort</button>
+            </div>
+          </div>`;
+          }
+          return `<div class="list-row" style="display:flex;justify-content:space-between;align-items:center;padding:14px 16px;">
+            <div>
+              <span class="badge badge-blue" style="margin-right:8px;">Akutjournal</span>
+              <b>${escapeHtml(f.klinik||'Klinik ej angiven')}${f.rumPlats? ' — '+escapeHtml(f.rumPlats):''}</b> <span style="color:var(--muted);">av ${escapeHtml(f.av)}</span>
+              <div style="font-size:11.5px;color:var(--muted);margin-top:2px;">${f.ankomstDatum||''} ${f.ankomstKl||''}</div>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <span class="badge ${AKJ_PRIOFARG_CLS[f.slutPrio]||'badge-gray'}">${escapeHtml(f.slutPrio||'Ej prioriterad')}</span>
+              <button class="btn btn-primary btn-sm" onclick="openHanteraAkutjournal('${f.id}')">Visa</button>
+              <button class="btn btn-danger btn-sm" onclick="delAkutjournal('${f.id}')">Ta bort</button>
             </div>
           </div>`;
         }).join('')}
@@ -3028,6 +3319,51 @@ function openHanteraJournal(id){
   `, true);
 }
 function delJournal(id){ if(!confirm('Ta bort journalen?'))return; DB.journalRapporter = DB.journalRapporter.filter(x=>x.id!==id); saveDB(); renderPage(); }
+function openHanteraAkutjournal(id){
+  const f = DB.akutjournalRapporter.find(x=>x.id===id);
+  openModal(`
+    <div class="modal-head"><h3>Akutjournal</h3><button class="modal-close" onclick="closeModal()">✕</button></div>
+    <div class="modal-body">
+      <div class="kv"><span>Klinik / Rum/Plats</span><b>${escapeHtml(f.klinik)||'—'} · ${escapeHtml(f.rumPlats)||'—'}</b></div>
+      <div class="kv"><span>Ankomst</span><b>${escapeHtml(f.ankomstDatum)||'—'} ${escapeHtml(f.ankomstKl)||''}</b></div>
+      <div class="kv"><span>Amb nr / Ärende nr</span><b>${escapeHtml(f.ambNr)||'—'} / ${escapeHtml(f.arendeNr)||'—'}</b></div>
+      <div class="kv"><span>Vårdare 1</span><b>${escapeHtml(f.vardare1)||'—'}</b></div>
+      <div class="kv"><span>Sekretess</span><b>${escapeHtml(f.sekretess)||'—'}</b></div>
+      <div class="jsec" style="margin-top:12px;">Riskfaktorer</div>
+      <div class="kv"><span>Kända sjukdomar</span><b>${f.anamnes&&f.anamnes.length?escapeHtml(f.anamnes.join(', ')):'Inga angivna'}</b></div>
+      <div class="kv"><span>Överkänslighet / Blodsmitta</span><b>${escapeHtml(f.overkanslighet)||'—'} / ${escapeHtml(f.blodsmitta)||'—'}</b></div>
+      <div class="kv"><span>Misst. G-E / MRSA-ESBL-VRE</span><b>${escapeHtml(f.misstankGE)||'—'} / ${escapeHtml(f.mrsaEsblVre)||'—'}</b></div>
+      <div class="jsec">Prioritering</div>
+      <div class="kv"><span>System</span><b>${escapeHtml(f.prioSystem)||'—'}</b></div>
+      <div style="margin:10px 0;padding:10px;background:#f7f8fb;border-radius:7px;font-size:12.5px;"><b>Aktuellt:</b> ${escapeHtml(f.aktuellt)||'—'}</div>
+      ${f.varnRod? `<div style="margin:10px 0;padding:10px;background:var(--red-bg);border-radius:7px;font-size:12.5px;"><b>RÖD:</b> ${escapeHtml(f.varnRod)}</div>`:''}
+      ${f.varnOrange? `<div style="margin:10px 0;padding:10px;background:var(--amber-bg);border-radius:7px;font-size:12.5px;"><b>ORANGE:</b> ${escapeHtml(f.varnOrange)}</div>`:''}
+      ${f.varnGul? `<div style="margin:10px 0;padding:10px;background:var(--amber-bg);border-radius:7px;font-size:12.5px;"><b>GUL:</b> ${escapeHtml(f.varnGul)}</div>`:''}
+      <div class="jsec">Vitalparametrar / NEWS2</div>
+      ${(f.matningar||[]).map((m,i)=>`
+        <div class="kv"><span>Mätning ${i+1} (${escapeHtml(m.tid)||'—'})</span><b>AF ${escapeHtml(m.af)||'—'} · SpO₂ ${escapeHtml(m.spo2)||'—'}% ${escapeHtml(m.syrgas)||''} · BT ${escapeHtml(m.bt)||'—'} · Puls ${escapeHtml(m.puls)||'—'} · ACVPU ${escapeHtml(m.acvpu)||'—'} · Temp ${escapeHtml(m.temp)||'—'} · NEWS2 ${escapeHtml(m.news2)||'—'}</b></div>
+      `).join('') || `<div class="hint">Inga mätningar registrerade.</div>`}
+      <div class="jsec">Prioriteringsfärger</div>
+      <div class="kv"><span>NEWS2 Prio</span><span class="badge ${AKJ_PRIOFARG_CLS[f.news2Prio]||'badge-gray'}">${escapeHtml(f.news2Prio)||'—'}</span></div>
+      <div class="kv"><span>Slutgiltig prioritering</span><span class="badge ${AKJ_PRIOFARG_CLS[f.slutPrio]||'badge-gray'}">${escapeHtml(f.slutPrio)||'—'}</span></div>
+      <div class="kv"><span>Omprioritering</span><span class="badge ${AKJ_PRIOFARG_CLS[f.omprio]||'badge-gray'}">${escapeHtml(f.omprio)||'—'}</span></div>
+      ${f.klinMotivering? `<div style="margin:10px 0;padding:10px;background:#f7f8fb;border-radius:7px;font-size:12.5px;"><b>Klinisk bedömning:</b> ${escapeHtml(f.klinMotivering)}</div>`:''}
+      <div class="jsec">Prover</div>
+      <div class="kv"><span>P-glukos / B-ketoner</span><b>${escapeHtml(f.prover.pGlukos)||'—'} / ${escapeHtml(f.prover.bKetoner)||'—'}</b></div>
+      <div class="kv"><span>Hb / CRP</span><b>${escapeHtml(f.prover.hb)||'—'} / ${escapeHtml(f.prover.crp)||'—'}</b></div>
+      <div class="kv"><span>Strep-A / F-Hb</span><b>${escapeHtml(f.prover.strepA)||'—'} / ${escapeHtml(f.prover.fHb)||'—'}</b></div>
+      <div class="jsec">Läkarordination</div>
+      <div style="margin:10px 0;padding:10px;background:#f7f8fb;border-radius:7px;font-size:12.5px;">${escapeHtml(f.lakarordination)||'Ingen ordination angiven'}</div>
+      ${(f.lakemedelsordinationer||[]).filter(l=>l.lak).length? `
+        <div class="jsec">Läkemedelsordinationer</div>
+        ${f.lakemedelsordinationer.map(l=>`<div class="kv"><span>${escapeHtml(l.lak)||'—'}</span><b>${escapeHtml(l.dos)||''} ${escapeHtml(l.adm)||''} kl ${escapeHtml(l.kl)||'—'} · ${escapeHtml(l.ssk)||'—'} · ${escapeHtml(l.resultat)||''}</b></div>`).join('')}
+      ` : ''}
+      <div class="kv" style="margin-top:10px;"><span>Rapporterad av</span><b>${escapeHtml(f.av)}</b></div>
+    </div>
+    <div class="modal-foot"><button class="btn" onclick="closeModal()">Stäng</button></div>
+  `, true);
+}
+function delAkutjournal(id){ if(!confirm('Ta bort akutjournalen?'))return; DB.akutjournalRapporter = DB.akutjournalRapporter.filter(x=>x.id!==id); saveDB(); renderPage(); }
 
 /* ================= INLOGGNING ================= */
 const SESSION_KEY = 'ambulansintranat_session_v1';

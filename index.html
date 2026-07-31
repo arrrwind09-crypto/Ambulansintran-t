@@ -1485,6 +1485,12 @@ function personRankScore(p){
   }
   return BEHORIGHET_FALT.length;
 }
+function personHighestRoll(p){
+  for(let i=0;i<BEHORIGHET_FALT.length;i++){
+    if(p.behorigheter && p.behorigheter[BEHORIGHET_FALT[i]]) return BEHORIGHET_FALT[i];
+  }
+  return p.roll;
+}
 function pagePersonal(){
   const sok = personalSok.trim().toLowerCase();
   const matchar = p => !sok || p.namn.toLowerCase().includes(sok) || (p.roll||'').toLowerCase().includes(sok);
@@ -1514,7 +1520,7 @@ function personCard(p){
       <div class="avatar" style="background:${p.status==='Aktiv'?'var(--accent)':'#c9a227'};flex-shrink:0;">${avatarHtml(p)}</div>
       <div class="flex1">
         <b>${escapeHtml(p.namn)} ${p.favorit?'⭐':''}</b>
-        <span>${escapeHtml(p.roll)}${p.telefon? ' · '+escapeHtml(p.telefon) : ''}</span>
+        <span>${escapeHtml(personHighestRoll(p))}${p.telefon? ' · '+escapeHtml(p.telefon) : ''}</span>
       </div>
       <span class="badge ${badge}" style="flex-shrink:0;">${escapeHtml(p.status)}</span>
     </div>

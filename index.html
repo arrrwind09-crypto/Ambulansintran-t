@@ -179,6 +179,10 @@
   .formular-card:hover{box-shadow:var(--shadow-md);transform:translateY(-1px);}
   .mall-hint{background:var(--green-bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--text);margin-bottom:16px;line-height:1.55;}
   .mall-hint b{display:block;margin-bottom:4px;}
+  .help-icon{display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:50%;background:var(--border);color:var(--muted);font-size:10px;font-weight:700;font-style:normal;letter-spacing:0;text-transform:none;cursor:pointer;margin-left:4px;vertical-align:middle;}
+  .help-icon:hover{background:var(--accent);color:#fff;}
+  .field-help-tip{position:absolute;display:none;max-width:260px;background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:8px;box-shadow:var(--shadow-md);padding:9px 11px;font-size:11.5px;line-height:1.5;z-index:300;}
+  .field-help-tip.show{display:block;}
   .countdown{font-family:var(--mono);font-size:26px;font-weight:700;color:var(--accent-dark);letter-spacing:.02em;}
   .next-label{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;}
   .next-time{font-size:12.5px;color:var(--text);font-weight:700;}
@@ -881,6 +885,177 @@ function toast(msg){
   clearTimeout(window.__toastT);
   window.__toastT = setTimeout(()=>t.classList.remove('show'), 2200);
 }
+
+/* ---------------- Fält-hjälp (lyktan bredvid varje fråga) ---------------- */
+const FIELD_HELP = {
+  frmDatum:'Datumet händelsen faktiskt inträffade.',
+  frmTid:'Ungefärlig klockslag när det hände.',
+  frmFordon:'Vilket fordon eller vilken enhet som var inblandad.',
+  frmForare:'Namnet på den som körde/ansvarade för fordonet vid tillfället.',
+  frmPlats:'Adress eller plats där skadan uppstod.',
+  frmTyp:'Välj den kategori som bäst beskriver vad som hände.',
+  frmBeskrivning:'Beskriv vad som hände, i vilken ordning, och eventuella konsekvenser. Skriv så att någon som inte var på plats förstår händelseförloppet.',
+  frmVittnen:'Namn och ev. enhet för de som såg händelsen.',
+  frmPatient:'Kryssa i om en patient fanns med i fordonet när det hände.',
+  frmPersonskador:'Kryssa i om någon person skadades i samband med händelsen.',
+  frmPolis:'Kryssa i om polis kontaktats eller anmälan gjorts.',
+
+  sbPatient:'Patientens namn, eller ett ID/beskrivning om namn saknas.',
+  sbPnr:'Fullständigt personnummer om det är känt.',
+  sbKon:'Patientens kön.',
+  sbAlder:'Ungefärlig åldersgrupp om exakt ålder inte är känd.',
+  sbDatumTid:'När kontakten med patienten inleddes.',
+  sbFordon:'Vilket fordon som är kopplat till uppdraget.',
+  sbTillstand:'Hur patienten mår just nu — medvetandegrad, andning, hudfärg m.m.',
+  sbAnledning:'Varför ambulans kontaktades, kort och konkret.',
+  sbAtgarder:'Vad som redan gjorts innan denna överrapportering.',
+  sbHistorik:'Relevant sjukdomshistorik eller tidigare komplikationer.',
+  sbMedicinering:'Aktuella mediciner som patienten står på.',
+  sbAllergi:'Kända allergier, särskilt mot läkemedel.',
+  sbBt:'Senast uppmätta blodtryck, systoliskt/diastoliskt.',
+  sbPuls:'Senast uppmätta pulsfrekvens.',
+  sbAndning:'Andningsfrekvens per minut.',
+  sbSat:'Syremättnad i procent (SpO₂).',
+  sbTemp:'Kroppstemperatur.',
+  sbNeuro:'T.ex. GCS-poäng eller en kort beskrivning av vakenhetsgrad.',
+  sbOverlamning:'Klockslag då patienten lämnas över till mottagande enhet.',
+  sbUtfardat:'Vem som skrivit och ansvarar för rapporten.',
+  sbPlan:'Vad mottagande enhet bör göra eller förbereda inför ankomst.',
+
+  jFor:'Vem som fyller i journalen.',
+  jSpecial:'Ange om uppdraget involverade en specialenhet, t.ex. helikopter eller läkarbil.',
+  jDatum:'Datum för uppdraget.',
+  jOrt:'Vilken ort eller vilket område uppdraget utgick från.',
+  jSSK:'Namn på ambulanssjuksköterskan i besättningen.',
+  jUSK:'Namn på ambulanssjukvårdaren i besättningen.',
+  jLakare:'Namn på ev. läkare som deltog på plats.',
+  jPilot:'Namn på piloten (vid helikopter-/dimbilsuppdrag).',
+  jCoPilot:'Namn på co-piloten (vid helikopter-/dimbilsuppdrag).',
+  jAnestSSK:'Namn på anestesisjuksköterskan i besättningen.',
+  jNarkoslakare:'Namn på narkosläkaren i besättningen.',
+  jRakel:'Vilket fordon/vilken enhet (rakelanrop) som användes.',
+  jTidLarm:'Tiden larmet mottogs.',
+  jTidAnkomst:'Tiden ni var framme hos patienten.',
+  jTidAvfard:'Tiden ni lämnade platsen.',
+  jLarmId:'Uppdragets ärende- eller larmnummer.',
+  jPnr:'Patientens fullständiga personnummer.',
+  jAlder:'Ålder, fylls i om personnummer saknas.',
+  jKon:'Patientens kön.',
+  jPosition:'Hur och var patienten hittades vid er ankomst.',
+  jRetts:'Prioritet enligt er RETTS-bedömning på plats.',
+  jSymtom:'Det huvudsakliga symtomet eller anledningen till att ni kallades.',
+  jDebut:'När symtomen bedöms ha börjat.',
+  jGcsE:'Ögonöppning enligt Glasgow Coma Scale.',
+  jGcsV:'Verbalt svar enligt Glasgow Coma Scale.',
+  jGcsM:'Motoriskt svar enligt Glasgow Coma Scale.',
+  jRls:'Bedömning enligt Reaction Level Scale.',
+  jAf:'Andningsfrekvens per minut.',
+  jSat:'Syremättnad i procent (SpO₂).',
+  jPuls:'Pulsfrekvens per minut.',
+  jTemp:'Kroppstemperatur.',
+  jBtSys:'Blodtryck, systoliskt (övre) värde.',
+  jBtDia:'Blodtryck, diastoliskt (undre) värde.',
+  jGlukos:'Uppmätt blodsocker.',
+  jNrs:'Smärtskattning från 0 (ingen smärta) till 10 (värsta tänkbara).',
+  jSmartLok:'Var på kroppen smärtan sitter.',
+  jSmartTyp:'Hur smärtan känns/beskrivs av patienten.',
+  jFrakturLok:'Var på kroppen frakturen sitter, om aktuellt.',
+  jInfartSatt:'Ange om en venös infart sattes på patienten.',
+  jDosEffekt:'Vilken dos som gavs, hur (administrationssätt), och vilken effekt det hade.',
+  jTransportTill:'Vilken mottagande enhet patienten kördes till.',
+  jTransportPrio:'Hur brådskande transporten var.',
+  jOverrapp:'Kort SBAR-sammanfattning som gavs vid överlämning.',
+  jAvvikelser:'Allt som avvek från det normala under uppdraget, t.ex. förseningar eller komplikationer.',
+
+  akjKlinik:'Vilken klinik/mottagning patienten kom till.',
+  akjRum:'Rum eller plats på mottagningen.',
+  akjAnkDatum:'Datum för ankomst till sjukhus/vårdcentral.',
+  akjAnkKl:'Klockslag för ankomst till sjukhus/vårdcentral.',
+  akjTolkbehov:'Kryssa i om patienten behöver tolk.',
+  akjTolkSprak:'Vilket språk tolk behövs på.',
+  akjLarmtid:'Tiden larmet mottogs, om relevant.',
+  akjAmbNr:'Ambulansens nummer/anropssignal.',
+  akjArendeNr:'Ärendenummer för besöket.',
+  akjVardare1:'Namn på ansvarig vårdare vid mottagandet.',
+  akjSekretess:'Ange om patientuppgifterna omfattas av särskild sekretess.',
+  akjOverkanslighet:'Kända allergier eller överkänsligheter.',
+  akjBlodsmitta:'Känd blodsmitta, t.ex. hepatit eller HIV.',
+  akjMisstGE:'Misstänkt gastroenterit (smittsam mag-/tarmsjukdom).',
+  akjMrsa:'Känd smitta med resistenta bakterier (MRSA/ESBL/VRE).',
+  akjPrioSystem:'Vilket triagesystem som använts för prioriteringen.',
+  akjAktuellt:'Kort sammanfattning av varför patienten söker vård just nu.',
+  akjVarnRod:'Symtom som innebär omedelbar livsfara — lämna tomt om inget föreligger.',
+  akjVarnOrange:'Symtom som innebär hög risk och kräver snabb bedömning.',
+  akjVarnGul:'Symtom som bör bedömas inom rimlig tid men inte är akut livshotande.',
+  akjProcess:'Vilket vårdförlopp/vilken process patienten följer, om tillämpligt.',
+  akjMatTid:'Klockslag när denna mätning gjordes.',
+  akjMatAf:'Andningsfrekvens per minut vid denna mätning.',
+  akjMatSpo2:'Syremättnad i procent vid denna mätning.',
+  akjMatSyrgas:'Om patienten fick syrgas eller andades luft vid mätningen.',
+  akjMatBt:'Blodtryck, systoliskt/diastoliskt, vid denna mätning.',
+  akjMatPuls:'Pulsfrekvens vid denna mätning.',
+  akjMatAcvpu:'Vakenhetsgrad: Alert, Confusion, Voice, Pain eller Unresponsive.',
+  akjMatTemp:'Kroppstemperatur vid denna mätning.',
+  akjMatNews2:'Summerad NEWS2-poäng utifrån denna mätnings värden.',
+  akjEkgAmb:'Kryssa i om EKG togs redan i ambulansen.',
+  akjEkgAkm:'Kryssa i om EKG togs på akutmottagningen.',
+  akjPupillerUa:'Kryssa i om pupillerna var utan anmärkning.',
+  akjPupillerAvvikelse:'Beskriv eventuell avvikelse i pupillstatus.',
+  akjVikt:'Patientens vikt, uppskattad eller uppmätt.',
+  akjLangd:'Patientens längd, uppskattad eller uppmätt.',
+  akjRtgSkriven:'Kryssa i om en röntgenremiss skrivits av sjuksköterska.',
+  akjNews2Prio:'Prioritetsfärg utifrån den beräknade NEWS2-poängen.',
+  akjSlutPrio:'Den slutgiltiga prioriteringen, inklusive klinisk bedömning.',
+  akjKlinMotivering:'Motivera om den slutgiltiga prioriteringen skiljer sig från NEWS2-poängen.',
+  akjOmprio:'Ange om och till vilken färg patienten omprioriterats under vårdtiden.',
+  akjUGlukos:'Glukosutfall på urinstickan.',
+  akjUKetoner:'Ketonutfall på urinstickan.',
+  akjUBlod:'Blodutfall på urinstickan.',
+  akjUPh:'Ph-värde på urinstickan.',
+  akjUProteiner:'Proteinutfall på urinstickan.',
+  akjUNitrit:'Nitritutfall på urinstickan.',
+  akjULeukocyt:'Leukocytutfall på urinstickan.',
+  akjUHcg:'Resultat av graviditetstest (U-Hcg), om taget.',
+  akjBladderMl:'Uppmätt urinmängd i blåsan med bladderscan.',
+  akjKadNr:'KAD-storlek (nummer) och kuffvolym.',
+  akjTappadMl:'Mängd urin som tappats via KAD.',
+  akjKissat:'Om och hur patienten kissat på egen hand.',
+  akjPGlukos:'Uppmätt P-glukos (blodsocker).',
+  akjBKetoner:'Uppmätt värde av B-ketoner.',
+  akjHb:'Uppmätt hemoglobinvärde.',
+  akjCrp:'Uppmätt CRP-värde (infektionsprov).',
+  akjStrepA:'Resultat av strep A-test, om taget.',
+  akjFHb:'Resultat av test för blod i avföring (F-Hb), om taget.',
+  akjLakarordination:'Vad läkaren ordinerat att göra på akuten, t.ex. prover, behandling eller inläggning.',
+  akjO2LiterMin:'Mängd syrgas i liter per minut, om patienten fick syrgas.',
+  akjLmLak:'Namnet på läkemedlet som ordinerades.',
+  akjLmDos:'Given dos av läkemedlet.',
+  akjLmAdm:'Hur läkemedlet gavs, t.ex. iv, im eller peroralt.',
+  akjLmKl:'Klockslag då läkemedlet gavs.',
+  akjLmSsk:'Vem som signerade/gav läkemedlet.',
+  akjLmResultat:'Vilken effekt läkemedlet hade.',
+};
+function showFieldHelp(e, key){
+  e.stopPropagation();
+  e.preventDefault();
+  const text = FIELD_HELP[key];
+  if(!text) return;
+  let tip = document.getElementById('fieldHelpTip');
+  if(!tip){
+    tip = document.createElement('div');
+    tip.id = 'fieldHelpTip';
+    tip.className = 'field-help-tip';
+    document.body.appendChild(tip);
+  }
+  tip.textContent = text;
+  tip.classList.add('show');
+  const rect = e.target.getBoundingClientRect();
+  const left = Math.min(rect.left + window.scrollX, window.scrollX + window.innerWidth - 280);
+  tip.style.left = Math.max(8, left) + 'px';
+  tip.style.top = (rect.bottom + window.scrollY + 6) + 'px';
+}
+document.addEventListener('click', ()=>{ const tip=document.getElementById('fieldHelpTip'); if(tip) tip.classList.remove('show'); });
+function hi(key){ return FIELD_HELP[key]? ` <span class="help-icon" onclick="showFieldHelp(event,'${key}')">ⓘ</span>` : ''; }
 
 /* ---------------- Modal helpers ---------------- */
 function openModal(html, wide){
@@ -1745,25 +1920,25 @@ function formularForm(){
         <b style="font-size:15px;display:block;margin-bottom:8px;">Skade-/Olycksrapport</b>
         <div class="mall-hint"><b>💡 Vad ska stå här?</b>Fyll i denna rapport vid skada på fordon, utrustning eller personal i samband med ett uppdrag. Beskriv vad som hände, i vilken ordning, och eventuella konsekvenser — skriv så att någon som inte var på plats förstår händelseförloppet.</div>
         <div class="grid2">
-          <div class="field"><span class="label">Datum för händelsen</span><input type="date" id="frmDatum" value="${todayISO()}"></div>
-          <div class="field"><span class="label">Ungefärlig tid</span><input type="time" id="frmTid" value="${new Date().toTimeString().slice(0,5)}"></div>
+          <div class="field"><span class="label">Datum för händelsen${hi('frmDatum')}</span><input type="date" id="frmDatum" value="${todayISO()}"></div>
+          <div class="field"><span class="label">Ungefärlig tid${hi('frmTid')}</span><input type="time" id="frmTid" value="${new Date().toTimeString().slice(0,5)}"></div>
         </div>
-        <div class="field"><span class="label">Fordon / enhet</span>
+        <div class="field"><span class="label">Fordon / enhet${hi('frmFordon')}</span>
           <select id="frmFordon">${vehicles.map(v=>`<option value="${v.id}">${escapeHtml(v.kod)} — ${escapeHtml(v.typ)} (${escapeHtml(v.station)})</option>`).join('')}</select>
         </div>
-        <div class="field"><span class="label">Förare vid tillfället</span><input type="text" id="frmForare" placeholder="Namn"></div>
-        <div class="field autocomplete"><span class="label">Plats / adress</span>
+        <div class="field"><span class="label">Förare vid tillfället${hi('frmForare')}</span><input type="text" id="frmForare" placeholder="Namn"></div>
+        <div class="field autocomplete"><span class="label">Plats / adress${hi('frmPlats')}</span>
           <input type="text" id="frmPlats" placeholder="ex: Storgatan 12, Stockholm" oninput="showPlatsAC(this)" autocomplete="off">
           <div class="ac-list" id="platsAC" style="display:none;"></div>
         </div>
-        <div class="field"><span class="label">Typ av skada</span>
+        <div class="field"><span class="label">Typ av skada${hi('frmTyp')}</span>
           <select id="frmTyp"><option value="">Välj typ...</option>${SKADETYPER.map(t=>`<option>${t}</option>`).join('')}</select>
         </div>
-        <div class="field"><span class="label">Beskrivning av händelsen</span><textarea id="frmBeskrivning" rows="4" placeholder="ex: Vid backning ut från garaget kolliderade fordonet med en lyktstolpe. Föraren uppmärksammade inte hindret i backspegeln. Skada på höger bakskärm, inga personskador."></textarea></div>
-        <div class="field"><span class="label">Vittnen (namn / enhet)</span><input type="text" id="frmVittnen" placeholder="ex: Anna Andersson, 3 31-1234"></div>
-        <label style="display:flex;align-items:center;gap:8px;font-size:12.5px;margin-bottom:10px;"><input type="checkbox" id="frmPatient"> Patient fanns ombord i ambulansen</label>
-        <label style="display:flex;align-items:center;gap:8px;font-size:12.5px;margin-bottom:10px;"><input type="checkbox" id="frmPersonskador"> Personskador förekommer</label>
-        <label style="display:flex;align-items:center;gap:8px;font-size:12.5px;margin-bottom:14px;"><input type="checkbox" id="frmPolis"> Polisanmälan gjord</label>
+        <div class="field"><span class="label">Beskrivning av händelsen${hi('frmBeskrivning')}</span><textarea id="frmBeskrivning" rows="4" placeholder="ex: Vid backning ut från garaget kolliderade fordonet med en lyktstolpe. Föraren uppmärksammade inte hindret i backspegeln. Skada på höger bakskärm, inga personskador."></textarea></div>
+        <div class="field"><span class="label">Vittnen (namn / enhet)${hi('frmVittnen')}</span><input type="text" id="frmVittnen" placeholder="ex: Anna Andersson, 3 31-1234"></div>
+        <label style="display:flex;align-items:center;gap:8px;font-size:12.5px;margin-bottom:10px;"><input type="checkbox" id="frmPatient"> Patient fanns ombord i ambulansen${hi('frmPatient')}</label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:12.5px;margin-bottom:10px;"><input type="checkbox" id="frmPersonskador"> Personskador förekommer${hi('frmPersonskador')}</label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:12.5px;margin-bottom:14px;"><input type="checkbox" id="frmPolis"> Polisanmälan gjord${hi('frmPolis')}</label>
         <div style="border:2px dashed var(--border);border-radius:8px;padding:26px;text-align:center;color:var(--muted);font-size:12.5px;margin-bottom:16px;">🖼<br>Klicka för att bifoga bild<br><span class="hint">(demo — bilduppladdning simuleras ej)</span></div>
         <div style="display:flex;gap:8px;">
           <button class="btn" onclick="window.__formShowNew=null; renderPage();">Avbryt</button>
@@ -1810,52 +1985,52 @@ function formSBARForm(){
 
         <div style="font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:700;margin:0 0 8px;">Patientuppgifter</div>
         <div class="grid2">
-          <div class="field"><span class="label">Patient</span><input type="text" id="sbPatient" placeholder="Namn eller ID"></div>
-          <div class="field"><span class="label">Personnummer</span><input type="text" id="sbPnr" placeholder="ÅÅÅÅMMDD-XXXX"></div>
+          <div class="field"><span class="label">Patient${hi('sbPatient')}</span><input type="text" id="sbPatient" placeholder="Namn eller ID"></div>
+          <div class="field"><span class="label">Personnummer${hi('sbPnr')}</span><input type="text" id="sbPnr" placeholder="ÅÅÅÅMMDD-XXXX"></div>
         </div>
         <div class="grid2">
-          <div class="field"><span class="label">Kön</span><select id="sbKon"><option>Man</option><option>Kvinna</option><option>Okänt</option></select></div>
-          <div class="field"><span class="label">Åldersgrupp</span><select id="sbAlder">
+          <div class="field"><span class="label">Kön${hi('sbKon')}</span><select id="sbKon"><option>Man</option><option>Kvinna</option><option>Okänt</option></select></div>
+          <div class="field"><span class="label">Åldersgrupp${hi('sbAlder')}</span><select id="sbAlder">
             <option>Barn (0-13)</option><option>Barn/Ungdom (13-19)</option><option selected>Vuxen (20+)</option><option>Senior (65+)</option>
           </select></div>
         </div>
 
         <div class="jsec" style="margin:18px 0 8px;">S — Situation</div>
         <div class="grid2">
-          <div class="field"><span class="label">Datum och tid</span><input type="datetime-local" id="sbDatumTid"></div>
-          <div class="field"><span class="label">Aktuellt vårdfordon</span><select id="sbFordon"><option value="">Välj fordon...</option>${DB.fordon.map(v=>`<option value="${v.id}">${escapeHtml(v.kod)} — ${escapeHtml(v.typ)} (${escapeHtml(v.station)})</option>`).join('')}</select></div>
+          <div class="field"><span class="label">Datum och tid${hi('sbDatumTid')}</span><input type="datetime-local" id="sbDatumTid"></div>
+          <div class="field"><span class="label">Aktuellt vårdfordon${hi('sbFordon')}</span><select id="sbFordon"><option value="">Välj fordon...</option>${DB.fordon.map(v=>`<option value="${v.id}">${escapeHtml(v.kod)} — ${escapeHtml(v.typ)} (${escapeHtml(v.station)})</option>`).join('')}</select></div>
         </div>
-        <div class="field"><span class="label">Aktuellt tillstånd</span><textarea id="sbTillstand" rows="2" placeholder="ex: Vaken, orienterad, andfådd i vila, viss cyanos runt läpparna."></textarea></div>
-        <div class="field"><span class="label">Anledning till ambulanskontakt</span><textarea id="sbAnledning" rows="2" placeholder="ex: Plötslig andnöd sedan 30 minuter, ingen tidigare liknande episod."></textarea></div>
-        <div class="field"><span class="label">Vidtagna åtgärder</span><textarea id="sbAtgarder" rows="2" placeholder="ex: Syrgas 3 l/min på grimma, patienten i halvsittande läge."></textarea></div>
+        <div class="field"><span class="label">Aktuellt tillstånd${hi('sbTillstand')}</span><textarea id="sbTillstand" rows="2" placeholder="ex: Vaken, orienterad, andfådd i vila, viss cyanos runt läpparna."></textarea></div>
+        <div class="field"><span class="label">Anledning till ambulanskontakt${hi('sbAnledning')}</span><textarea id="sbAnledning" rows="2" placeholder="ex: Plötslig andnöd sedan 30 minuter, ingen tidigare liknande episod."></textarea></div>
+        <div class="field"><span class="label">Vidtagna åtgärder${hi('sbAtgarder')}</span><textarea id="sbAtgarder" rows="2" placeholder="ex: Syrgas 3 l/min på grimma, patienten i halvsittande läge."></textarea></div>
 
         <div class="jsec" style="margin:18px 0 8px;">B — Bakgrund</div>
-        <div class="field"><span class="label">Tidigare historik / komplikationer</span><textarea id="sbHistorik" rows="2" placeholder="ex: Känd KOL sedan 2019, ingen tidigare sjukhusvistelse för detta."></textarea></div>
+        <div class="field"><span class="label">Tidigare historik / komplikationer${hi('sbHistorik')}</span><textarea id="sbHistorik" rows="2" placeholder="ex: Känd KOL sedan 2019, ingen tidigare sjukhusvistelse för detta."></textarea></div>
         <div class="grid2">
-          <div class="field"><span class="label">Medicinering</span><input type="text" id="sbMedicinering"></div>
-          <div class="field"><span class="label">Allergi</span><input type="text" id="sbAllergi"></div>
+          <div class="field"><span class="label">Medicinering${hi('sbMedicinering')}</span><input type="text" id="sbMedicinering"></div>
+          <div class="field"><span class="label">Allergi${hi('sbAllergi')}</span><input type="text" id="sbAllergi"></div>
         </div>
 
         <div class="jsec" style="margin:18px 0 8px;">A — Aktuellt tillstånd</div>
         <div class="grid2">
-          <div class="field"><span class="label">Blodtryck (mmHg)</span><input type="text" id="sbBt" placeholder="120/80"></div>
-          <div class="field"><span class="label">Puls (slag/min)</span><input type="number" id="sbPuls"></div>
+          <div class="field"><span class="label">Blodtryck (mmHg)${hi('sbBt')}</span><input type="text" id="sbBt" placeholder="120/80"></div>
+          <div class="field"><span class="label">Puls (slag/min)${hi('sbPuls')}</span><input type="number" id="sbPuls"></div>
         </div>
         <div class="grid2">
-          <div class="field"><span class="label">Andning /min</span><input type="number" id="sbAndning"></div>
-          <div class="field"><span class="label">SAT-värde (%)</span><input type="number" id="sbSat"></div>
+          <div class="field"><span class="label">Andning /min${hi('sbAndning')}</span><input type="number" id="sbAndning"></div>
+          <div class="field"><span class="label">SAT-värde (%)${hi('sbSat')}</span><input type="number" id="sbSat"></div>
         </div>
         <div class="grid2">
-          <div class="field"><span class="label">Temperatur °C</span><input type="number" step="0.1" id="sbTemp"></div>
-          <div class="field"><span class="label">Neurologisk status</span><input type="text" id="sbNeuro"></div>
+          <div class="field"><span class="label">Temperatur °C${hi('sbTemp')}</span><input type="number" step="0.1" id="sbTemp"></div>
+          <div class="field"><span class="label">Neurologisk status${hi('sbNeuro')}</span><input type="text" id="sbNeuro"></div>
         </div>
 
         <div class="jsec" style="margin:18px 0 8px;">R — Rekommendation</div>
         <div class="grid2">
-          <div class="field"><span class="label">Tidpunkt för överlämning</span><input type="time" id="sbOverlamning"></div>
-          <div class="field"><span class="label">Utfärdat av</span><input type="text" id="sbUtfardat" value="${escapeHtml(me.namn)}"></div>
+          <div class="field"><span class="label">Tidpunkt för överlämning${hi('sbOverlamning')}</span><input type="time" id="sbOverlamning"></div>
+          <div class="field"><span class="label">Utfärdat av${hi('sbUtfardat')}</span><input type="text" id="sbUtfardat" value="${escapeHtml(me.namn)}"></div>
         </div>
-        <div class="field"><span class="label">Plan / Rekommendation</span><textarea id="sbPlan" rows="3" placeholder="ex: Rekommenderas läkarbedömning inom 30 min, förslag på inhalationsbehandling vid ankomst."></textarea></div>
+        <div class="field"><span class="label">Plan / Rekommendation${hi('sbPlan')}</span><textarea id="sbPlan" rows="3" placeholder="ex: Rekommenderas läkarbedömning inom 30 min, förslag på inhalationsbehandling vid ankomst."></textarea></div>
 
         <div style="display:flex;gap:8px;margin-top:8px;">
           <button class="btn" onclick="window.__formShowNew=null; renderPage();">Avbryt</button>
@@ -1935,103 +2110,103 @@ function formJournalForm(){
         <div class="mall-hint"><b>💡 Vad ska stå här?</b>Fyll i journalen för varje genomfört uppdrag med patientkontakt. Var konkret och saklig — undvik gissningar, skriv det du faktiskt observerat och gjort. Fälten under "Vitalparametrar" ska spegla första mätningen på plats om inget annat anges.</div>
 
         <div class="jsec">Uppdrag</div>
-        <div class="field"><span class="label">Journalföring av</span><input type="text" id="jFor" list="dlPersonal" value="${escapeHtml(me.namn)}"></div>
+        <div class="field"><span class="label">Journalföring av${hi('jFor')}</span><input type="text" id="jFor" list="dlPersonal" value="${escapeHtml(me.namn)}"></div>
         ${personDatalist('dlPersonal')}
-        <div class="field"><span class="label">Ev. specialenhet</span>
+        <div class="field"><span class="label">Ev. specialenhet${hi('jSpecial')}</span>
           <select id="jSpecial" onchange="window.__journalSpecial=this.value; refreshJournalForm();">
             ${JOURNAL_SPECIALENHET.map(s=>`<option ${window.__journalSpecial===s?'selected':''}>${s}</option>`).join('')}
           </select>
         </div>
         <div class="grid2">
-          <div class="field"><span class="label">Datum för uppdrag</span><input type="date" id="jDatum" value="${todayISO()}"></div>
-          <div class="field"><span class="label">Utgångspunkt/ort</span><select id="jOrt">${JOURNAL_ORT.map(o=>`<option>${o}</option>`).join('')}</select></div>
+          <div class="field"><span class="label">Datum för uppdrag${hi('jDatum')}</span><input type="date" id="jDatum" value="${todayISO()}"></div>
+          <div class="field"><span class="label">Utgångspunkt/ort${hi('jOrt')}</span><select id="jOrt">${JOURNAL_ORT.map(o=>`<option>${o}</option>`).join('')}</select></div>
         </div>
         <div class="grid2">
-          <div class="field"><span class="label">Ambulanssjuksköterska</span><input type="text" id="jSSK" list="dlPersonal"></div>
-          <div class="field"><span class="label">Ambulanssjukvårdare</span><input type="text" id="jUSK" list="dlPersonal"></div>
+          <div class="field"><span class="label">Ambulanssjuksköterska${hi('jSSK')}</span><input type="text" id="jSSK" list="dlPersonal"></div>
+          <div class="field"><span class="label">Ambulanssjukvårdare${hi('jUSK')}</span><input type="text" id="jUSK" list="dlPersonal"></div>
         </div>
-        <div class="field"><span class="label">Ev. läkare</span><input type="text" id="jLakare" list="dlPersonal"></div>
+        <div class="field"><span class="label">Ev. läkare${hi('jLakare')}</span><input type="text" id="jLakare" list="dlPersonal"></div>
         <div id="journalBesattning">${window.__journalSpecial==='Helikopter/Dimbil' ? `
           <div class="grid2">
-            <div class="field"><span class="label">Pilot</span><input type="text" id="jPilot" list="dlPersonal"></div>
-            <div class="field"><span class="label">Co-Pilot</span><input type="text" id="jCoPilot" list="dlPersonal"></div>
+            <div class="field"><span class="label">Pilot${hi('jPilot')}</span><input type="text" id="jPilot" list="dlPersonal"></div>
+            <div class="field"><span class="label">Co-Pilot${hi('jCoPilot')}</span><input type="text" id="jCoPilot" list="dlPersonal"></div>
           </div>
           <div class="grid2">
-            <div class="field"><span class="label">Anestesisjuksköterska</span><input type="text" id="jAnestSSK" list="dlPersonal"></div>
-            <div class="field"><span class="label">Narkosläkare</span><input type="text" id="jNarkoslakare" list="dlPersonal"></div>
+            <div class="field"><span class="label">Anestesisjuksköterska${hi('jAnestSSK')}</span><input type="text" id="jAnestSSK" list="dlPersonal"></div>
+            <div class="field"><span class="label">Narkosläkare${hi('jNarkoslakare')}</span><input type="text" id="jNarkoslakare" list="dlPersonal"></div>
           </div>` : ''}</div>
-        <div class="field"><span class="label">Ambulansrakel / fordon</span>
+        <div class="field"><span class="label">Ambulansrakel / fordon${hi('jRakel')}</span>
           <select id="jRakel">${groupBy(DB.fordon, v=>v.station).map(([station,vs])=>`<optgroup label="${escapeHtml(station||'Övrigt')}">${vs.map(v=>`<option value="${v.id}">${escapeHtml(v.kod)} — ${escapeHtml(v.typ)}</option>`).join('')}</optgroup>`).join('') || `<option value="">Inga fordon registrerade</option>`}</select>
         </div>
 
         <div class="jsec">Larminformation</div>
         <div class="grid2">
-          <div class="field"><span class="label">Tid larm mottaget</span><input type="time" id="jTidLarm"></div>
-          <div class="field"><span class="label">Tid ankomst patient</span><input type="time" id="jTidAnkomst"></div>
+          <div class="field"><span class="label">Tid larm mottaget${hi('jTidLarm')}</span><input type="time" id="jTidLarm"></div>
+          <div class="field"><span class="label">Tid ankomst patient${hi('jTidAnkomst')}</span><input type="time" id="jTidAnkomst"></div>
         </div>
         <div class="grid2">
-          <div class="field"><span class="label">Tid avfärd från plats</span><input type="time" id="jTidAvfard"></div>
-          <div class="field"><span class="label">Uppdragsnummer / Larm-ID</span><input type="text" id="jLarmId" placeholder="ex: 2026-04231"></div>
+          <div class="field"><span class="label">Tid avfärd från plats${hi('jTidAvfard')}</span><input type="time" id="jTidAvfard"></div>
+          <div class="field"><span class="label">Uppdragsnummer / Larm-ID${hi('jLarmId')}</span><input type="text" id="jLarmId" placeholder="ex: 2026-04231"></div>
         </div>
 
         <div class="jsec">Patient</div>
         <div class="grid2">
-          <div class="field"><span class="label">Personnummer</span><input type="text" id="jPnr" placeholder="ÅÅÅÅMMDD-XXXX"></div>
-          <div class="field"><span class="label">Ålder (om personnummer saknas)</span><input type="number" id="jAlder"></div>
+          <div class="field"><span class="label">Personnummer${hi('jPnr')}</span><input type="text" id="jPnr" placeholder="ÅÅÅÅMMDD-XXXX"></div>
+          <div class="field"><span class="label">Ålder (om personnummer saknas)${hi('jAlder')}</span><input type="number" id="jAlder"></div>
         </div>
         <div class="grid2">
-          <div class="field"><span class="label">Kön</span><select id="jKon"><option>Man</option><option>Kvinna</option><option>Annat / okänt</option></select></div>
-          <div class="field"><span class="label">Patientens position vid ankomst</span><select id="jPosition"><option>Liggande</option><option>Sittande</option><option>Gående</option><option>Fastklämd</option><option>Annat</option></select></div>
+          <div class="field"><span class="label">Kön${hi('jKon')}</span><select id="jKon"><option>Man</option><option>Kvinna</option><option>Annat / okänt</option></select></div>
+          <div class="field"><span class="label">Patientens position vid ankomst${hi('jPosition')}</span><select id="jPosition"><option>Liggande</option><option>Sittande</option><option>Gående</option><option>Fastklämd</option><option>Annat</option></select></div>
         </div>
-        <div class="field"><span class="label">Prioritet enligt RETTS</span>
+        <div class="field"><span class="label">Prioritet enligt RETTS${hi('jRetts')}</span>
           <select id="jRetts"><option>Röd</option><option>Orange</option><option>Gul</option><option>Grön</option></select>
         </div>
         <div class="grid2">
-          <div class="field"><span class="label">Huvudsymtom / Söksak</span><input type="text" id="jSymtom" placeholder="ex: Bröstsmärta"></div>
-          <div class="field"><span class="label">Debut (tidpunkt/uppskattning)</span><input type="text" id="jDebut" placeholder="ex: Ca 45 min innan larm, plötsligt insättande"></div>
+          <div class="field"><span class="label">Huvudsymtom / Söksak${hi('jSymtom')}</span><input type="text" id="jSymtom" placeholder="ex: Bröstsmärta"></div>
+          <div class="field"><span class="label">Debut (tidpunkt/uppskattning)${hi('jDebut')}</span><input type="text" id="jDebut" placeholder="ex: Ca 45 min innan larm, plötsligt insättande"></div>
         </div>
 
         <div class="jsec">GCS — Glasgow Coma Scale</div>
         <div class="grid2">
-          <div class="field"><span class="label">Ögonöppning (E)</span><select id="jGcsE" onchange="updateGcsSum()">${GCS_E.map(([v,l])=>`<option value="${v}">${l}</option>`).join('')}</select></div>
-          <div class="field"><span class="label">Verbalt svar (V)</span><select id="jGcsV" onchange="updateGcsSum()">${GCS_V.map(([v,l])=>`<option value="${v}">${l}</option>`).join('')}</select></div>
+          <div class="field"><span class="label">Ögonöppning (E)${hi('jGcsE')}</span><select id="jGcsE" onchange="updateGcsSum()">${GCS_E.map(([v,l])=>`<option value="${v}">${l}</option>`).join('')}</select></div>
+          <div class="field"><span class="label">Verbalt svar (V)${hi('jGcsV')}</span><select id="jGcsV" onchange="updateGcsSum()">${GCS_V.map(([v,l])=>`<option value="${v}">${l}</option>`).join('')}</select></div>
         </div>
         <div class="grid2">
-          <div class="field"><span class="label">Motoriskt svar (M)</span><select id="jGcsM" onchange="updateGcsSum()">${GCS_M.map(([v,l])=>`<option value="${v}">${l}</option>`).join('')}</select></div>
-          <div class="field"><span class="label">Total GCS</span><input type="text" id="jGcsSum" value="15" readonly style="background:#f7f8fb;font-weight:700;"></div>
+          <div class="field"><span class="label">Motoriskt svar (M)${hi('jGcsM')}</span><select id="jGcsM" onchange="updateGcsSum()">${GCS_M.map(([v,l])=>`<option value="${v}">${l}</option>`).join('')}</select></div>
+          <div class="field"><span class="label">Total GCS${hi('jGcsSum')}</span><input type="text" id="jGcsSum" value="15" readonly style="background:#f7f8fb;font-weight:700;"></div>
         </div>
-        <div class="field"><span class="label">RLS — Reaction Level Scale</span><select id="jRls">${RLS_OPT.map(([v,l])=>`<option value="${v}">${l}</option>`).join('')}</select></div>
+        <div class="field"><span class="label">RLS — Reaction Level Scale${hi('jRls')}</span><select id="jRls">${RLS_OPT.map(([v,l])=>`<option value="${v}">${l}</option>`).join('')}</select></div>
 
         <div class="jsec">Vitalparametrar</div>
         <div class="grid2">
-          <div class="field"><span class="label">Andningsfrekvens (/min)</span><input type="number" id="jAf" placeholder="Normalt: 12–20"></div>
-          <div class="field"><span class="label">Saturation (%)</span><input type="number" id="jSat" placeholder="Normalt: 95–100"></div>
+          <div class="field"><span class="label">Andningsfrekvens (/min)${hi('jAf')}</span><input type="number" id="jAf" placeholder="Normalt: 12–20"></div>
+          <div class="field"><span class="label">Saturation (%)${hi('jSat')}</span><input type="number" id="jSat" placeholder="Normalt: 95–100"></div>
         </div>
         <div class="grid2">
-          <div class="field"><span class="label">Puls (/min)</span><input type="number" id="jPuls" placeholder="Normalt: 60–100"></div>
-          <div class="field"><span class="label">Temperatur (°C)</span><input type="number" step="0.1" id="jTemp" placeholder="Normalt: 36–37,5"></div>
+          <div class="field"><span class="label">Puls (/min)${hi('jPuls')}</span><input type="number" id="jPuls" placeholder="Normalt: 60–100"></div>
+          <div class="field"><span class="label">Temperatur (°C)${hi('jTemp')}</span><input type="number" step="0.1" id="jTemp" placeholder="Normalt: 36–37,5"></div>
         </div>
         <div class="grid2">
-          <div class="field"><span class="label">Blodtryck systoliskt (mmHg)</span><input type="number" id="jBtSys" placeholder="100–140"></div>
-          <div class="field"><span class="label">Blodtryck diastoliskt (mmHg)</span><input type="number" id="jBtDia" placeholder="60–90"></div>
+          <div class="field"><span class="label">Blodtryck systoliskt (mmHg)${hi('jBtSys')}</span><input type="number" id="jBtSys" placeholder="100–140"></div>
+          <div class="field"><span class="label">Blodtryck diastoliskt (mmHg)${hi('jBtDia')}</span><input type="number" id="jBtDia" placeholder="60–90"></div>
         </div>
-        <div class="field"><span class="label">Blodsocker (mmol/L)</span><input type="number" step="0.1" id="jGlukos" placeholder="Normalt: 4–6"></div>
+        <div class="field"><span class="label">Blodsocker (mmol/L)${hi('jGlukos')}</span><input type="number" step="0.1" id="jGlukos" placeholder="Normalt: 4–6"></div>
 
         <div class="jsec">Smärta</div>
         <div class="grid2">
-          <div class="field"><span class="label">NRS (0–10)</span><input type="number" min="0" max="10" id="jNrs"></div>
-          <div class="field"><span class="label">Smärtans lokalisation</span><input type="text" id="jSmartLok" placeholder="ex: Centralt i bröstet, strålar mot vänster arm"></div>
+          <div class="field"><span class="label">NRS (0–10)${hi('jNrs')}</span><input type="number" min="0" max="10" id="jNrs"></div>
+          <div class="field"><span class="label">Smärtans lokalisation${hi('jSmartLok')}</span><input type="text" id="jSmartLok" placeholder="ex: Centralt i bröstet, strålar mot vänster arm"></div>
         </div>
-        <div class="field"><span class="label">Typ av smärta</span><select id="jSmartTyp"><option>Molande</option><option>Huggande</option><option>Tryckande</option><option>Brännande</option><option>Diffus</option></select></div>
+        <div class="field"><span class="label">Typ av smärta${hi('jSmartTyp')}</span><select id="jSmartTyp"><option>Molande</option><option>Huggande</option><option>Tryckande</option><option>Brännande</option><option>Diffus</option></select></div>
 
         <div class="jsec">Misstänkta eller konstaterade skador</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 14px;margin-bottom:10px;">
           ${SKADOR_LISTA.map(s=>`<label style="display:flex;align-items:center;gap:7px;font-size:12.5px;padding:3px 0;"><input type="checkbox" class="jSkada" value="${s}" ${s==='Fraktur'?'onchange="toggleFrakturField()"':''}> ${s}</label>`).join('')}
         </div>
-        <div class="field" id="jFrakturWrap" style="display:none;"><span class="label">Om fraktur — lokalisation</span><input type="text" id="jFrakturLok" placeholder="ex: Höger underarm"></div>
+        <div class="field" id="jFrakturWrap" style="display:none;"><span class="label">Om fraktur — lokalisation${hi('jFrakturLok')}</span><input type="text" id="jFrakturLok" placeholder="ex: Höger underarm"></div>
 
         <div class="jsec">Infart</div>
-        <div class="field"><span class="label">Infart satt?</span><select id="jInfartSatt" onchange="refreshJournalForm()">
+        <div class="field"><span class="label">Infart satt?${hi('jInfartSatt')}</span><select id="jInfartSatt" onchange="refreshJournalForm()">
           <option value="Nej" ${window.__journalInfartSatt!=='Ja'?'selected':''}>Nej</option>
           <option value="Ja" ${window.__journalInfartSatt==='Ja'?'selected':''}>Ja</option>
         </select></div>
@@ -2042,21 +2217,21 @@ function formJournalForm(){
           ${ATGARDER_LISTA.map(a=>`<label style="display:flex;align-items:center;gap:7px;font-size:12.5px;padding:3px 0;"><input type="checkbox" class="jAtgard" value="${a}"> ${a}</label>`).join('')}
           <label style="display:flex;align-items:center;gap:7px;font-size:12.5px;padding:3px 0;"><input type="checkbox" id="jAtgardOvrigtCb" onchange="document.getElementById('jAtgardOvrigtWrap').style.display=this.checked?'block':'none';"> Övrigt</label>
         </div>
-        <div class="field" id="jAtgardOvrigtWrap" style="display:none;"><span class="label">Övrigt, ange vilken åtgärd</span><input type="text" id="jAtgardOvrigtText" placeholder="Beskriv åtgärden som utfördes..."></div>
+        <div class="field" id="jAtgardOvrigtWrap" style="display:none;"><span class="label">Övrigt, ange vilken åtgärd${hi('jAtgardOvrigtText')}</span><input type="text" id="jAtgardOvrigtText" placeholder="Beskriv åtgärden som utfördes..."></div>
 
         <div class="jsec">Administrerade läkemedel</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 14px;margin-bottom:6px;">
           ${LAKEMEDEL_LISTA.map(l=>`<label style="display:flex;align-items:center;gap:7px;font-size:12.5px;padding:3px 0;"><input type="checkbox" class="jLakemedel" value="${l}"> ${l}</label>`).join('')}
           <label style="display:flex;align-items:center;gap:7px;font-size:12.5px;padding:3px 0;"><input type="checkbox" id="jLakemedelOvrigtCb" onchange="document.getElementById('jLakemedelOvrigtWrap').style.display=this.checked?'block':'none';"> Övrigt</label>
         </div>
-        <div class="field" id="jLakemedelOvrigtWrap" style="display:none;"><span class="label">Övrigt, ange läkemedel</span><input type="text" id="jLakemedelOvrigtText" placeholder="Namn på läkemedlet..."></div>
-        <div class="field"><span class="label">Dos, administrationssätt och effekt</span><textarea id="jDosEffekt" rows="2" placeholder="ex: 5 mg iv, given långsamt. Effekt: smärtan minskade från NRS 8 till 4 inom 10 min."></textarea></div>
+        <div class="field" id="jLakemedelOvrigtWrap" style="display:none;"><span class="label">Övrigt, ange läkemedel${hi('jLakemedelOvrigtText')}</span><input type="text" id="jLakemedelOvrigtText" placeholder="Namn på läkemedlet..."></div>
+        <div class="field"><span class="label">Dos, administrationssätt och effekt${hi('jDosEffekt')}</span><textarea id="jDosEffekt" rows="2" placeholder="ex: 5 mg iv, given långsamt. Effekt: smärtan minskade från NRS 8 till 4 inom 10 min."></textarea></div>
 
         <div class="jsec">Transport</div>
-        <div class="field"><span class="label">Transporterad till</span><select id="jTransportTill">${JOURNAL_TRANSPORT.map(t=>`<option>${escapeHtml(t)}</option>`).join('')}</select></div>
-        <div class="field"><span class="label">Transportprioritet</span><select id="jTransportPrio"><option>Akut (prio 1)</option><option>Snabb (prio 2)</option><option>Normal (prio 3)</option></select></div>
-        <div class="field"><span class="label">Överrapportering (SBAR eller motsvarande)</span><textarea id="jOverrapp" rows="2" placeholder="ex: S: Bröstsmärta sedan 45 min. B: Hypertoni, ingen tidigare hjärtsjukdom. A: BT 145/90, puls 92, EKG utan ST-höjning. R: Övervakning, smärtlindring vb."></textarea></div>
-        <div class="field"><span class="label">Avvikelser / Övriga iakttagelser</span><textarea id="jAvvikelser" rows="2" placeholder="ex: Inga avvikelser. Eller: Fördröjd avfärd pga vägarbete på E6."></textarea></div>
+        <div class="field"><span class="label">Transporterad till${hi('jTransportTill')}</span><select id="jTransportTill">${JOURNAL_TRANSPORT.map(t=>`<option>${escapeHtml(t)}</option>`).join('')}</select></div>
+        <div class="field"><span class="label">Transportprioritet${hi('jTransportPrio')}</span><select id="jTransportPrio"><option>Akut (prio 1)</option><option>Snabb (prio 2)</option><option>Normal (prio 3)</option></select></div>
+        <div class="field"><span class="label">Överrapportering (SBAR eller motsvarande)${hi('jOverrapp')}</span><textarea id="jOverrapp" rows="2" placeholder="ex: S: Bröstsmärta sedan 45 min. B: Hypertoni, ingen tidigare hjärtsjukdom. A: BT 145/90, puls 92, EKG utan ST-höjning. R: Övervakning, smärtlindring vb."></textarea></div>
+        <div class="field"><span class="label">Avvikelser / Övriga iakttagelser${hi('jAvvikelser')}</span><textarea id="jAvvikelser" rows="2" placeholder="ex: Inga avvikelser. Eller: Fördröjd avfärd pga vägarbete på E6."></textarea></div>
 
         <div style="display:flex;gap:8px;margin-top:8px;">
           <button class="btn" onclick="window.__formShowNew=null; window.__journalInfartTyp=''; window.__journalInfartSatt=''; renderPage();">Avbryt</button>
@@ -2154,31 +2329,31 @@ function formAkutjournalForm(){
 
         <div class="jsec" style="margin-top:0;">Mottagning</div>
         <div class="grid2">
-          <div class="field"><span class="label">Klinik</span><input type="text" id="akjKlinik" placeholder="ex: Akutmottagningen NÄL"></div>
-          <div class="field"><span class="label">Rum/Plats</span><input type="text" id="akjRum" placeholder="ex: Rum 4"></div>
+          <div class="field"><span class="label">Klinik${hi('akjKlinik')}</span><input type="text" id="akjKlinik" placeholder="ex: Akutmottagningen NÄL"></div>
+          <div class="field"><span class="label">Rum/Plats${hi('akjRum')}</span><input type="text" id="akjRum" placeholder="ex: Rum 4"></div>
         </div>
         <div class="grid2">
-          <div class="field"><span class="label">Ankomst sjukhus/VC, datum</span><input type="date" id="akjAnkDatum" value="${todayISO()}"></div>
-          <div class="field"><span class="label">Ankomst sjukhus/VC, kl</span><input type="time" id="akjAnkKl"></div>
+          <div class="field"><span class="label">Ankomst sjukhus/VC, datum${hi('akjAnkDatum')}</span><input type="date" id="akjAnkDatum" value="${todayISO()}"></div>
+          <div class="field"><span class="label">Ankomst sjukhus/VC, kl${hi('akjAnkKl')}</span><input type="time" id="akjAnkKl"></div>
         </div>
         <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:10px;">
           <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;"><input type="checkbox" id="akjLakartriage"> Läkartriage</label>
           <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;"><input type="checkbox" id="akjRemiss"> Remiss</label>
-          <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;"><input type="checkbox" id="akjTolkbehov"> Tolkbehov/språk</label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;"><input type="checkbox" id="akjTolkbehov"> Tolkbehov/språk${hi('akjTolkbehov')}</label>
           <input type="text" id="akjTolkSprak" placeholder="Vilket språk?" style="flex:1;min-width:120px;padding:6px 9px;border:1px solid var(--border);border-radius:4px;">
         </div>
         <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:10px;">
           <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;"><input type="checkbox" id="akjIdKontroll"> Id-kontroll</label>
           <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;"><input type="checkbox" id="akjIdBand"> Id-band</label>
-          <div class="field" style="margin:0;"><span class="label">Sekretess</span><select id="akjSekretess"><option>Nej</option><option>Ja</option></select></div>
+          <div class="field" style="margin:0;"><span class="label">Sekretess${hi('akjSekretess')}</span><select id="akjSekretess"><option>Nej</option><option>Ja</option></select></div>
         </div>
         <div class="grid2">
-          <div class="field"><span class="label">Larmtid</span><input type="time" id="akjLarmtid"></div>
-          <div class="field"><span class="label">Amb nr</span><input type="text" id="akjAmbNr"></div>
+          <div class="field"><span class="label">Larmtid${hi('akjLarmtid')}</span><input type="time" id="akjLarmtid"></div>
+          <div class="field"><span class="label">Amb nr${hi('akjAmbNr')}</span><input type="text" id="akjAmbNr"></div>
         </div>
         <div class="grid2">
-          <div class="field"><span class="label">Ärende nr</span><input type="text" id="akjArendeNr"></div>
-          <div class="field"><span class="label">Vårdare 1</span><input type="text" id="akjVardare1" list="dlPersonal"></div>
+          <div class="field"><span class="label">Ärende nr${hi('akjArendeNr')}</span><input type="text" id="akjArendeNr"></div>
+          <div class="field"><span class="label">Vårdare 1${hi('akjVardare1')}</span><input type="text" id="akjVardare1" list="dlPersonal"></div>
         </div>
         ${personDatalist('dlPersonal')}
 
@@ -2187,23 +2362,23 @@ function formAkutjournalForm(){
           ${AKJ_ANAMNES.map(a=>`<label style="display:flex;align-items:center;gap:7px;font-size:12.5px;padding:3px 0;"><input type="checkbox" class="akjAnamnes" value="${a}"> ${a}</label>`).join('')}
         </div>
         <div class="grid2">
-          <div class="field"><span class="label">Överkänslighet</span><select id="akjOverkanslighet"><option>Ingen känd</option><option>Ja</option></select></div>
-          <div class="field"><span class="label">Blodsmitta</span><select id="akjBlodsmitta"><option>Ingen känd</option><option>Ja</option></select></div>
+          <div class="field"><span class="label">Överkänslighet${hi('akjOverkanslighet')}</span><select id="akjOverkanslighet"><option>Ingen känd</option><option>Ja</option></select></div>
+          <div class="field"><span class="label">Blodsmitta${hi('akjBlodsmitta')}</span><select id="akjBlodsmitta"><option>Ingen känd</option><option>Ja</option></select></div>
         </div>
         <div class="grid2">
-          <div class="field"><span class="label">Misstänkt G-E</span><select id="akjMisstGE"><option>Nej</option><option>Ja</option></select></div>
-          <div class="field"><span class="label">MRSA/ESBL/VRE</span><select id="akjMrsa"><option>Ingen känd</option><option>Ja</option></select></div>
+          <div class="field"><span class="label">Misstänkt G-E${hi('akjMisstGE')}</span><select id="akjMisstGE"><option>Nej</option><option>Ja</option></select></div>
+          <div class="field"><span class="label">MRSA/ESBL/VRE${hi('akjMrsa')}</span><select id="akjMrsa"><option>Ingen känd</option><option>Ja</option></select></div>
         </div>
 
         <div class="jsec">Prioritering</div>
-        <div class="field"><span class="label">Prioriteringssystem enligt</span><input type="text" id="akjPrioSystem" placeholder="ex: RETTS, WEST"></div>
-        <div class="field"><span class="label">Aktuellt</span><textarea id="akjAktuellt" rows="3" placeholder="ex: 68-årig man med plötslig bröstsmärta sedan 1 timme, insatt av ambulans med misstänkt STEMI."></textarea></div>
+        <div class="field"><span class="label">Prioriteringssystem enligt${hi('akjPrioSystem')}</span><input type="text" id="akjPrioSystem" placeholder="ex: RETTS, WEST"></div>
+        <div class="field"><span class="label">Aktuellt${hi('akjAktuellt')}</span><textarea id="akjAktuellt" rows="3" placeholder="ex: 68-årig man med plötslig bröstsmärta sedan 1 timme, insatt av ambulans med misstänkt STEMI."></textarea></div>
         <div class="grid2">
-          <div class="field"><span class="label" style="color:var(--red);">RÖD — Varningssymtom</span><textarea id="akjVarnRod" rows="2" placeholder="ex: Medvetandesänkning, andningsstopp — lämna tomt om inget föreligger"></textarea></div>
-          <div class="field"><span class="label" style="color:#c07a00;">ORANGE — Varningssymtom</span><textarea id="akjVarnOrange" rows="2" placeholder="ex: Kraftig smärta, avvikande vitalparametrar"></textarea></div>
+          <div class="field"><span class="label" style="color:var(--red);">RÖD — Varningssymtom${hi('akjVarnRod')}</span><textarea id="akjVarnRod" rows="2" placeholder="ex: Medvetandesänkning, andningsstopp — lämna tomt om inget föreligger"></textarea></div>
+          <div class="field"><span class="label" style="color:#c07a00;">ORANGE — Varningssymtom${hi('akjVarnOrange')}</span><textarea id="akjVarnOrange" rows="2" placeholder="ex: Kraftig smärta, avvikande vitalparametrar"></textarea></div>
         </div>
-        <div class="field"><span class="label" style="color:var(--amber);">GUL — Varningssymtom</span><textarea id="akjVarnGul" rows="2" placeholder="ex: Måttlig smärta, lätt påverkad allmäntillstånd"></textarea></div>
-        <div class="field"><span class="label">Process</span><input type="text" id="akjProcess" placeholder="ex: Bröstsmärteprocessen"></div>
+        <div class="field"><span class="label" style="color:var(--amber);">GUL — Varningssymtom${hi('akjVarnGul')}</span><textarea id="akjVarnGul" rows="2" placeholder="ex: Måttlig smärta, lätt påverkad allmäntillstånd"></textarea></div>
+        <div class="field"><span class="label">Process${hi('akjProcess')}</span><input type="text" id="akjProcess" placeholder="ex: Bröstsmärteprocessen"></div>
 
         <div class="jsec">Vitalparametrar (VP) &amp; NEWS2</div>
         <div id="akjMatningarWrap">${akjMatningHtml()}</div>
@@ -2211,49 +2386,49 @@ function formAkutjournalForm(){
 
         <div class="jsec">EKG, pupiller &amp; övrigt</div>
         <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:10px;">
-          <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;"><input type="checkbox" id="akjEkgAmb"> EKG taget (AMB)</label>
-          <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;"><input type="checkbox" id="akjEkgAkm"> EKG taget (AKM)</label>
-          <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;"><input type="checkbox" id="akjPupillerUa"> Pupiller u.a.</label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;"><input type="checkbox" id="akjEkgAmb"> EKG taget (AMB)${hi('akjEkgAmb')}</label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;"><input type="checkbox" id="akjEkgAkm"> EKG taget (AKM)${hi('akjEkgAkm')}</label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;"><input type="checkbox" id="akjPupillerUa"> Pupiller u.a.${hi('akjPupillerUa')}</label>
         </div>
-        <div class="field"><span class="label">Pupiller — avvikelse</span><input type="text" id="akjPupillerAvvikelse" placeholder="ex: Anisokori, vänster pupill vidgad"></div>
+        <div class="field"><span class="label">Pupiller — avvikelse${hi('akjPupillerAvvikelse')}</span><input type="text" id="akjPupillerAvvikelse" placeholder="ex: Anisokori, vänster pupill vidgad"></div>
         <div class="grid2">
-          <div class="field"><span class="label">Vikt (kg)</span><input type="number" id="akjVikt"></div>
-          <div class="field"><span class="label">Längd (cm)</span><input type="number" id="akjLangd"></div>
+          <div class="field"><span class="label">Vikt (kg)${hi('akjVikt')}</span><input type="number" id="akjVikt"></div>
+          <div class="field"><span class="label">Längd (cm)${hi('akjLangd')}</span><input type="number" id="akjLangd"></div>
         </div>
-        <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;margin-bottom:10px;"><input type="checkbox" id="akjRtgSkriven"> Ssk Rtg-remiss skriven</label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;margin-bottom:10px;"><input type="checkbox" id="akjRtgSkriven"> Ssk Rtg-remiss skriven${hi('akjRtgSkriven')}</label>
 
         <div class="jsec">Prioritering &amp; omprioritering</div>
         <div class="grid2">
-          <div class="field"><span class="label">NEWS2 Prio</span>${akjPrioSelect('akjNews2Prio','')}</div>
-          <div class="field"><span class="label">Slutgiltig prioritering (ink. klinisk bedömning)</span>${akjPrioSelect('akjSlutPrio','')}</div>
+          <div class="field"><span class="label">NEWS2 Prio${hi('akjNews2Prio')}</span>${akjPrioSelect('akjNews2Prio','')}</div>
+          <div class="field"><span class="label">Slutgiltig prioritering (ink. klinisk bedömning)${hi('akjSlutPrio')}</span>${akjPrioSelect('akjSlutPrio','')}</div>
         </div>
-        <div class="field"><span class="label">Klinisk bedömning — motivering</span><textarea id="akjKlinMotivering" rows="2" placeholder="ex: Nedjusterad från orange till gul efter smärtlindring, stabila vitalparametrar."></textarea></div>
-        <div class="field"><span class="label">Omprioritering</span>${akjPrioSelect('akjOmprio','')}</div>
+        <div class="field"><span class="label">Klinisk bedömning — motivering${hi('akjKlinMotivering')}</span><textarea id="akjKlinMotivering" rows="2" placeholder="ex: Nedjusterad från orange till gul efter smärtlindring, stabila vitalparametrar."></textarea></div>
+        <div class="field"><span class="label">Omprioritering${hi('akjOmprio')}</span>${akjPrioSelect('akjOmprio','')}</div>
 
         <div class="jsec">Urinsticka / Odling / HCG / KAD</div>
         <div class="grid2">
-          <div class="field"><span class="label">Glukos</span><input type="text" id="akjUGlukos"></div>
-          <div class="field"><span class="label">Ketoner</span><input type="text" id="akjUKetoner"></div>
+          <div class="field"><span class="label">Glukos${hi('akjUGlukos')}</span><input type="text" id="akjUGlukos"></div>
+          <div class="field"><span class="label">Ketoner${hi('akjUKetoner')}</span><input type="text" id="akjUKetoner"></div>
         </div>
         <div class="grid2">
-          <div class="field"><span class="label">Blod</span><input type="text" id="akjUBlod"></div>
-          <div class="field"><span class="label">Ph</span><input type="text" id="akjUPh"></div>
+          <div class="field"><span class="label">Blod${hi('akjUBlod')}</span><input type="text" id="akjUBlod"></div>
+          <div class="field"><span class="label">Ph${hi('akjUPh')}</span><input type="text" id="akjUPh"></div>
         </div>
         <div class="grid2">
-          <div class="field"><span class="label">Proteiner</span><input type="text" id="akjUProteiner"></div>
-          <div class="field"><span class="label">Nitrit</span><input type="text" id="akjUNitrit"></div>
+          <div class="field"><span class="label">Proteiner${hi('akjUProteiner')}</span><input type="text" id="akjUProteiner"></div>
+          <div class="field"><span class="label">Nitrit${hi('akjUNitrit')}</span><input type="text" id="akjUNitrit"></div>
         </div>
         <div class="grid2">
-          <div class="field"><span class="label">Leukocyt</span><input type="text" id="akjULeukocyt"></div>
-          <div class="field"><span class="label">U-Hcg</span><input type="text" id="akjUHcg"></div>
+          <div class="field"><span class="label">Leukocyt${hi('akjULeukocyt')}</span><input type="text" id="akjULeukocyt"></div>
+          <div class="field"><span class="label">U-Hcg${hi('akjUHcg')}</span><input type="text" id="akjUHcg"></div>
         </div>
         <div class="grid2">
-          <div class="field"><span class="label">Bladderscan (ml)</span><input type="number" id="akjBladderMl"></div>
-          <div class="field"><span class="label">KAD nr / Kuff (ml)</span><input type="text" id="akjKadNr"></div>
+          <div class="field"><span class="label">Bladderscan (ml)${hi('akjBladderMl')}</span><input type="number" id="akjBladderMl"></div>
+          <div class="field"><span class="label">KAD nr / Kuff (ml)${hi('akjKadNr')}</span><input type="text" id="akjKadNr"></div>
         </div>
         <div class="grid2">
-          <div class="field"><span class="label">Tappad (ml)</span><input type="number" id="akjTappadMl"></div>
-          <div class="field"><span class="label">Kissat</span><input type="text" id="akjKissat" placeholder="ex: Ja, spontant, klar urin"></div>
+          <div class="field"><span class="label">Tappad (ml)${hi('akjTappadMl')}</span><input type="number" id="akjTappadMl"></div>
+          <div class="field"><span class="label">Kissat${hi('akjKissat')}</span><input type="text" id="akjKissat" placeholder="ex: Ja, spontant, klar urin"></div>
         </div>
         <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:10px;">
           <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;"><input type="checkbox" id="akjUodlIkyl"> U-odling: I-kyl</label>
@@ -2262,16 +2437,16 @@ function formAkutjournalForm(){
 
         <div class="jsec">Prover</div>
         <div class="grid2">
-          <div class="field"><span class="label">P-glukos (mmol/L)</span><input type="number" step="0.1" id="akjPGlukos"></div>
-          <div class="field"><span class="label">B-ketoner</span><input type="number" step="0.1" id="akjBKetoner"></div>
+          <div class="field"><span class="label">P-glukos (mmol/L)${hi('akjPGlukos')}</span><input type="number" step="0.1" id="akjPGlukos"></div>
+          <div class="field"><span class="label">B-ketoner${hi('akjBKetoner')}</span><input type="number" step="0.1" id="akjBKetoner"></div>
         </div>
         <div class="grid2">
-          <div class="field"><span class="label">Hb (g/L)</span><input type="number" id="akjHb"></div>
-          <div class="field"><span class="label">CRP (mg/L)</span><input type="number" id="akjCrp"></div>
+          <div class="field"><span class="label">Hb (g/L)${hi('akjHb')}</span><input type="number" id="akjHb"></div>
+          <div class="field"><span class="label">CRP (mg/L)${hi('akjCrp')}</span><input type="number" id="akjCrp"></div>
         </div>
         <div class="grid2">
-          <div class="field"><span class="label">Strep-A</span><select id="akjStrepA"><option value="">Ej taget</option><option>Pos</option><option>Neg</option></select></div>
-          <div class="field"><span class="label">F-Hb</span><select id="akjFHb"><option value="">Ej taget</option><option>Pos</option><option>Neg</option></select></div>
+          <div class="field"><span class="label">Strep-A${hi('akjStrepA')}</span><select id="akjStrepA"><option value="">Ej taget</option><option>Pos</option><option>Neg</option></select></div>
+          <div class="field"><span class="label">F-Hb${hi('akjFHb')}</span><select id="akjFHb"><option value="">Ej taget</option><option>Pos</option><option>Neg</option></select></div>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 14px;margin-bottom:10px;">
           <label style="display:flex;align-items:center;gap:7px;font-size:12.5px;"><input type="checkbox" id="akjBlododl1"> Blododling, 1 kl</label>
@@ -2288,7 +2463,7 @@ function formAkutjournalForm(){
 
         <div class="jsec">Läkarordination på akuten</div>
         <div class="field"><textarea id="akjLakarordination" rows="3" placeholder="ex: EKG, troponin, smärtlindring vb, inläggning kardiologavdelning."></textarea></div>
-        <div class="field"><span class="label">O₂ (liter/min)</span><input type="number" step="0.5" id="akjO2LiterMin"></div>
+        <div class="field"><span class="label">O₂ (liter/min)${hi('akjO2LiterMin')}</span><input type="number" step="0.5" id="akjO2LiterMin"></div>
 
         <div id="akjLmWrap">${akjLmHtml()}</div>
         <button class="btn btn-sm" onclick="akjAddLM()">+ Lägg till läkemedelsordination</button>
@@ -2309,22 +2484,22 @@ function akjMatningHtml(){
         ${window.__akjMatningar.length>1? `<button class="btn btn-sm btn-danger" onclick="akjRemoveMatning(${i})">Ta bort</button>`:''}
       </div>
       <div class="grid2">
-        <div class="field"><span class="label">Kl</span><input type="time" id="akjMat_${i}_tid" value="${escapeHtml(m.tid||'')}"></div>
-        <div class="field"><span class="label">AF (/min)</span><input type="number" id="akjMat_${i}_af" value="${escapeHtml(m.af||'')}"></div>
+        <div class="field"><span class="label">Kl${hi('akjMatTid')}</span><input type="time" id="akjMat_${i}_tid" value="${escapeHtml(m.tid||'')}"></div>
+        <div class="field"><span class="label">AF (/min)${hi('akjMatAf')}</span><input type="number" id="akjMat_${i}_af" value="${escapeHtml(m.af||'')}"></div>
       </div>
       <div class="grid2">
-        <div class="field"><span class="label">SpO₂ (%)</span><input type="number" id="akjMat_${i}_spo2" value="${escapeHtml(m.spo2||'')}"></div>
-        <div class="field"><span class="label">Syrgas/Luft</span><select id="akjMat_${i}_syrgas"><option ${m.syrgas==='Luft'||!m.syrgas?'selected':''}>Luft</option><option ${m.syrgas==='Syrgas'?'selected':''}>Syrgas</option></select></div>
+        <div class="field"><span class="label">SpO₂ (%)${hi('akjMatSpo2')}</span><input type="number" id="akjMat_${i}_spo2" value="${escapeHtml(m.spo2||'')}"></div>
+        <div class="field"><span class="label">Syrgas/Luft${hi('akjMatSyrgas')}</span><select id="akjMat_${i}_syrgas"><option ${m.syrgas==='Luft'||!m.syrgas?'selected':''}>Luft</option><option ${m.syrgas==='Syrgas'?'selected':''}>Syrgas</option></select></div>
       </div>
       <div class="grid2">
-        <div class="field"><span class="label">BT syst./diast. (mmHg)</span><input type="text" id="akjMat_${i}_bt" placeholder="120/80" value="${escapeHtml(m.bt||'')}"></div>
-        <div class="field"><span class="label">Puls (/min)</span><input type="number" id="akjMat_${i}_puls" value="${escapeHtml(m.puls||'')}"></div>
+        <div class="field"><span class="label">BT syst./diast. (mmHg)${hi('akjMatBt')}</span><input type="text" id="akjMat_${i}_bt" placeholder="120/80" value="${escapeHtml(m.bt||'')}"></div>
+        <div class="field"><span class="label">Puls (/min)${hi('akjMatPuls')}</span><input type="number" id="akjMat_${i}_puls" value="${escapeHtml(m.puls||'')}"></div>
       </div>
       <div class="grid2">
-        <div class="field"><span class="label">ACVPU</span><select id="akjMat_${i}_acvpu">${['A','C','V','P','U'].map(o=>`<option ${m.acvpu===o||(!m.acvpu&&o==='A')?'selected':''}>${o}</option>`).join('')}</select></div>
-        <div class="field"><span class="label">Temp (°C)</span><input type="number" step="0.1" id="akjMat_${i}_temp" value="${escapeHtml(m.temp||'')}"></div>
+        <div class="field"><span class="label">ACVPU${hi('akjMatAcvpu')}</span><select id="akjMat_${i}_acvpu">${['A','C','V','P','U'].map(o=>`<option ${m.acvpu===o||(!m.acvpu&&o==='A')?'selected':''}>${o}</option>`).join('')}</select></div>
+        <div class="field"><span class="label">Temp (°C)${hi('akjMatTemp')}</span><input type="number" step="0.1" id="akjMat_${i}_temp" value="${escapeHtml(m.temp||'')}"></div>
       </div>
-      <div class="field"><span class="label">NEWS2-poäng</span><input type="number" id="akjMat_${i}_news2" value="${escapeHtml(m.news2||'')}"></div>
+      <div class="field"><span class="label">NEWS2-poäng${hi('akjMatNews2')}</span><input type="number" id="akjMat_${i}_news2" value="${escapeHtml(m.news2||'')}"></div>
     </div>`).join('');
 }
 function akjLmHtml(){
@@ -2335,16 +2510,16 @@ function akjLmHtml(){
         ${window.__akjLM.length>1? `<button class="btn btn-sm btn-danger" onclick="akjRemoveLM(${i})">Ta bort</button>`:''}
       </div>
       <div class="grid2">
-        <div class="field"><span class="label">Läkemedel</span><input type="text" id="akjLm_${i}_lak" value="${escapeHtml(l.lak||'')}"></div>
-        <div class="field"><span class="label">Dos</span><input type="text" id="akjLm_${i}_dos" value="${escapeHtml(l.dos||'')}"></div>
+        <div class="field"><span class="label">Läkemedel${hi('akjLmLak')}</span><input type="text" id="akjLm_${i}_lak" value="${escapeHtml(l.lak||'')}"></div>
+        <div class="field"><span class="label">Dos${hi('akjLmDos')}</span><input type="text" id="akjLm_${i}_dos" value="${escapeHtml(l.dos||'')}"></div>
       </div>
       <div class="grid2">
-        <div class="field"><span class="label">Administrationssätt</span><input type="text" id="akjLm_${i}_adm" value="${escapeHtml(l.adm||'')}"></div>
-        <div class="field"><span class="label">Kl</span><input type="time" id="akjLm_${i}_kl" value="${escapeHtml(l.kl||'')}"></div>
+        <div class="field"><span class="label">Administrationssätt${hi('akjLmAdm')}</span><input type="text" id="akjLm_${i}_adm" value="${escapeHtml(l.adm||'')}"></div>
+        <div class="field"><span class="label">Kl${hi('akjLmKl')}</span><input type="time" id="akjLm_${i}_kl" value="${escapeHtml(l.kl||'')}"></div>
       </div>
       <div class="grid2">
-        <div class="field"><span class="label">Ssk (sign)</span><input type="text" id="akjLm_${i}_ssk" list="dlPersonal" value="${escapeHtml(l.ssk||'')}"></div>
-        <div class="field"><span class="label">Resultat</span><input type="text" id="akjLm_${i}_resultat" value="${escapeHtml(l.resultat||'')}"></div>
+        <div class="field"><span class="label">Ssk (sign)${hi('akjLmSsk')}</span><input type="text" id="akjLm_${i}_ssk" list="dlPersonal" value="${escapeHtml(l.ssk||'')}"></div>
+        <div class="field"><span class="label">Resultat${hi('akjLmResultat')}</span><input type="text" id="akjLm_${i}_resultat" value="${escapeHtml(l.resultat||'')}"></div>
       </div>
     </div>`).join('');
 }

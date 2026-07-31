@@ -169,6 +169,7 @@
 
   /* ---------- misc pages ---------- */
   .schema-banner{display:flex;align-items:center;justify-content:space-between;gap:20px;margin-bottom:16px;background:linear-gradient(90deg,#eff7f0 0%,#fff 100%);}
+  .rutin-link{color:var(--accent);}
   .avatar{width:34px;height:34px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0;overflow:hidden;}
   .avatar img{width:100%;height:100%;object-fit:cover;display:block;}
   .hem-grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px;}
@@ -285,9 +286,30 @@
   }
   body.dark-theme .th-bell .badge{ background:var(--card); }
   body.dark-theme ::-webkit-scrollbar-thumb{ background:#465150; }
-  body.dark-theme .sb-link:hover{ background:#25302f; }
+  body.dark-theme .sb-link{ color:var(--muted); }
+  body.dark-theme .sb-link:hover{ background:#25302f; color:var(--text); }
+  body.dark-theme .sb-link.active{ color:var(--accent-dark); }
+  body.dark-theme .jsec, body.dark-theme .countdown, body.dark-theme .rutin-link{ color:#5cc9a7; }
+  body.dark-theme [style*="f7f8fb"]{ background:#232d2c !important; }
+  body.dark-theme [style*="eef1f7"]{ background:#232d2c !important; }
+  body.dark-theme [style*="f7f9fb"]{ background:#232d2c !important; }
+  body.dark-theme .btn:hover{ background:#25302f; }
+  body.dark-theme .modal-close{ background:#2a3538; }
+  body.dark-theme .ac-item:hover{ background:#25302f; }
   body.dark-theme .notif-item:hover{ background:#232d2c; }
   body.dark-theme .notif-item.unread{ background:#1a2725; }
+  body.dark-theme .badge-blue{ background:#173a2e; color:#5cc9a7; }
+  body.dark-theme .badge-green{ color:#4ade80; }
+  body.dark-theme .badge-red{ color:#f87171; }
+  body.dark-theme .badge-amber{ color:#fbbf24; }
+  body.dark-theme .badge-gray{ background:#2a3538; color:#c3ccca; }
+  body.dark-theme .veh-icon{ background:#2a3538; color:#c3ccca; }
+  body.dark-theme .veh-flag{ color:#fbbf24; }
+  body.dark-theme .mod-note{ color:#fbbf24; }
+  body.dark-theme .sb-group-label{ color:#6f8683; }
+  body.dark-theme .sb-status{ color:#5fd68a; }
+  body.dark-theme .sb-foot{ color:#6f8683; }
+  body.dark-theme .sb-foot img{ filter:brightness(0) invert(1); opacity:.6; }
 </style>
 </head>
 <body>
@@ -672,6 +694,7 @@ function migrateDB(){
   DB.personal.forEach(p=>{
     if(!p.behorigheter) p.behorigheter = {};
     BEHORIGHET_FALT.forEach(t=>{ if(p.behorigheter[t]===undefined) p.behorigheter[t] = false; });
+    Object.keys(p.behorigheter).forEach(k=>{ if(!BEHORIGHET_FALT.includes(k)) delete p.behorigheter[k]; });
     if(!Array.isArray(p.utbildningar)) p.utbildningar = [];
     if(p.profilbild===undefined) p.profilbild = null;
     if(p.telefon===undefined) p.telefon = '';
@@ -1742,7 +1765,7 @@ function formSBARForm(){
           </select></div>
         </div>
 
-        <div style="font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--accent-dark);font-weight:700;margin:18px 0 8px;border-top:1px solid var(--border);padding-top:16px;">S — Situation</div>
+        <div class="jsec" style="margin:18px 0 8px;">S — Situation</div>
         <div class="grid2">
           <div class="field"><span class="label">Datum och tid</span><input type="datetime-local" id="sbDatumTid"></div>
           <div class="field"><span class="label">Aktuellt vårdfordon</span><select id="sbFordon"><option value="">Välj fordon...</option>${DB.fordon.map(v=>`<option value="${v.id}">${escapeHtml(v.kod)} — ${escapeHtml(v.typ)} (${escapeHtml(v.station)})</option>`).join('')}</select></div>
@@ -1751,14 +1774,14 @@ function formSBARForm(){
         <div class="field"><span class="label">Anledning till ambulanskontakt</span><textarea id="sbAnledning" rows="2"></textarea></div>
         <div class="field"><span class="label">Vidtagna åtgärder</span><textarea id="sbAtgarder" rows="2"></textarea></div>
 
-        <div style="font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--accent-dark);font-weight:700;margin:18px 0 8px;border-top:1px solid var(--border);padding-top:16px;">B — Bakgrund</div>
+        <div class="jsec" style="margin:18px 0 8px;">B — Bakgrund</div>
         <div class="field"><span class="label">Tidigare historik / komplikationer</span><textarea id="sbHistorik" rows="2"></textarea></div>
         <div class="grid2">
           <div class="field"><span class="label">Medicinering</span><input type="text" id="sbMedicinering"></div>
           <div class="field"><span class="label">Allergi</span><input type="text" id="sbAllergi"></div>
         </div>
 
-        <div style="font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--accent-dark);font-weight:700;margin:18px 0 8px;border-top:1px solid var(--border);padding-top:16px;">A — Aktuellt tillstånd</div>
+        <div class="jsec" style="margin:18px 0 8px;">A — Aktuellt tillstånd</div>
         <div class="grid2">
           <div class="field"><span class="label">Blodtryck (mmHg)</span><input type="text" id="sbBt" placeholder="120/80"></div>
           <div class="field"><span class="label">Puls (slag/min)</span><input type="number" id="sbPuls"></div>
@@ -1772,7 +1795,7 @@ function formSBARForm(){
           <div class="field"><span class="label">Neurologisk status</span><input type="text" id="sbNeuro"></div>
         </div>
 
-        <div style="font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--accent-dark);font-weight:700;margin:18px 0 8px;border-top:1px solid var(--border);padding-top:16px;">R — Rekommendation</div>
+        <div class="jsec" style="margin:18px 0 8px;">R — Rekommendation</div>
         <div class="grid2">
           <div class="field"><span class="label">Tidpunkt för överlämning</span><input type="time" id="sbOverlamning"></div>
           <div class="field"><span class="label">Utfärdat av</span><input type="text" id="sbUtfardat" value="${escapeHtml(me.namn)}"></div>
@@ -2519,7 +2542,7 @@ function pageRutiner(scopeType, scopeName){
           <div class="list-row" style="display:flex;justify-content:space-between;align-items:flex-start;">
             <div><span class="badge badge-blue" style="margin-right:8px;">${escapeHtml(r.kategori)}</span><b>${escapeHtml(r.titel)}</b>
               ${r.beskrivning? `<div style="font-size:12px;color:var(--muted);margin-top:3px;">${escapeHtml(r.beskrivning)}</div>`:''}
-              ${r.url? `<div style="font-size:12px;margin-top:3px;"><a href="${escapeHtml(r.url)}" target="_blank" style="color:var(--accent);text-decoration:underline;">${escapeHtml(r.url)}</a></div>`:''}
+              ${r.url? `<div style="font-size:12px;margin-top:3px;"><a href="${escapeHtml(r.url)}" target="_blank" class="rutin-link" style="text-decoration:underline;">${escapeHtml(r.url)}</a></div>`:''}
             </div>
             ${isAdmin()? `<button class="btn btn-danger btn-sm" onclick="delRutin('${key}','${r.id}')">Ta bort</button>` : ''}
           </div>`).join('')}
@@ -2598,7 +2621,7 @@ function pageMittKonto(){
         </div>
         <span class="label">Kontakt-/reservuppgifter</span>
         <div class="field" style="display:flex;gap:8px;align-items:flex-end;margin-bottom:0;">
-          <div style="flex:1;"><input type="text" id="mittTelefon" placeholder="Telefonnummer" value="${escapeHtml(me.telefon||'')}"></div>
+          <div style="flex:1;"><input type="tel" id="mittTelefon" inputmode="tel" placeholder="Telefonnummer" value="${escapeHtml(me.telefon||'')}" oninput="this.value=this.value.replace(/[^0-9+\-\s()]/g,'')"></div>
           <button class="btn btn-sm" onclick="sparaKontakt()">Spara</button>
         </div>
         <p style="font-size:11px;color:var(--muted);margin:6px 0 0;">Synligt för kollegor, t.ex. vid schemaändringar eller vid behov av att nå dig utanför systemet.</p>
@@ -2606,7 +2629,7 @@ function pageMittKonto(){
       <div class="card pad" style="grid-column:1/-1;">
         <b style="display:block;margin-bottom:12px;">Mina behörigheter</b>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 24px;">
-          ${Object.entries(me.behorigheter).map(([k,v])=>`<div class="kv"><span>${k}</span><span class="badge ${v?'badge-green':'badge-red'}">${v?'Behörig':'Ej behörig'}</span></div>`).join('')}
+          ${BEHORIGHET_FALT.map(k=>`<div class="kv"><span>${k}</span><span class="badge ${me.behorigheter[k]?'badge-green':'badge-red'}">${me.behorigheter[k]?'Behörig':'Ej behörig'}</span></div>`).join('')}
         </div>
       </div>
       ${!isAdmin()? `<div class="card pad" style="grid-column:1/-1;">
@@ -2650,6 +2673,7 @@ function taBortProfilbild(){
 }
 function sparaKontakt(){
   const tel = document.getElementById('mittTelefon').value.trim();
+  if(tel && !/^[0-9+\-\s()]{6,20}$/.test(tel)){ toast('Ange endast ett telefonnummer (siffror, mellanslag, + eller -).'); return; }
   currentUser().telefon = tel;
   saveDB(); toast('Kontaktuppgifter sparade');
 }

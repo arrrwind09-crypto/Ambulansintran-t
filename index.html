@@ -386,11 +386,11 @@ const LOGO_VGR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAA4QAAACvCAYAAACl
    intern grupp, men lägg inte in riktigt känsliga personuppgifter.
 ===================================================================== */
 const JSONBIN_CONFIG = {
-  apiKey: "$2a$10$ta3ICQsWSZ/e/39gCpcUbeDCu87kMTypCZZOosCY9xbtv41PyZiL.",
-  binId: "6a68da17da38895dfe9c465c"   // delad molnlagring för alla som öppnar sidan
+  apiKey: "$2a$10$OiBS8hQINkpc.K2nS4a0teaWcXuV6ZZFPBLupA3MrmQ/2kg3RGBkO",
+  binId: "6a6e1682da38895dfead04d4"   // delad molnlagring för alla som öppnar sidan
 };
 const JSONBIN_BASE = 'https://api.jsonbin.io/v3/b';
-const CLOUD_POLL_MS = 8000; // hur ofta appen kollar efter ändringar från andra (kortare = känns mer direkt, men gör fler anrop mot gratiskvoten)
+const CLOUD_POLL_MS = 30000; // hur ofta appen kollar efter ändringar från andra (kortare = känns mer direkt, men gör fler anrop mot gratiskvoten — sänkt från 8000 efter att den fria engångskvoten tog slut)
 
 let cloudEnabled = false;
 let cloudBinId = '';

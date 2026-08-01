@@ -720,6 +720,8 @@ function seed(){
     kontoAdmin:{'karl.svensson':true},
     discordNamn:{},
     vantandeKonton:[],
+    utseende:{accent:'#1a7a4c', accentDark:'#125c39', appNamn:'Ambulansintranät', appUndertext:'Sahlgrenska International Care'},
+    egnaSidor:[],
     nastaId:100
   };
 }
@@ -1034,6 +1036,11 @@ const FIELD_HELP = {
   akjLmKl:'Klockslag då läkemedlet gavs.',
   akjLmSsk:'Vem som signerade/gav läkemedlet.',
   akjLmResultat:'Vilken effekt läkemedlet hade.',
+
+  anpAccent:'Systemets huvudfärg — används i header, knappar och länkar.',
+  anpAccentDark:'En mörkare ton av accentfärgen, används vid hover och som kant på knappar.',
+  anpNamn:'Namnet som visas i sidhuvudet, webbläsarfliken och på inloggningssidan.',
+  anpUndertext:'Undertexten som visas under systemnamnet, t.ex. er organisation.',
 };
 function showFieldHelp(e, key){
   e.stopPropagation();
@@ -1095,6 +1102,7 @@ const SIDEBAR = [
     {id:'anvandare', label:'Användare', icon:'◑'},
     {id:'behorigheter', label:'Behörigheter', icon:'⚿'},
     {id:'inskickade-formular', label:'Inskickade formulär', icon:'▧'},
+    {id:'anpassa', label:'Anpassa systemet', icon:'🎨'},
   ]},
 ];
 
@@ -1105,7 +1113,7 @@ function renderTopHeader(){
     <div class="th-left">
       <img class="th-vgr-logo" src="${LOGO_VGR}" alt="Region Västra Götaland">
       <span class="th-divider"></span>
-      <div class="th-title"><b>Ambulansintranät</b><span>Sahlgrenska International Care</span></div>
+      <div class="th-title"><b>${escapeHtml(DB.utseende.appNamn)}</b><span>${escapeHtml(DB.utseende.appUndertext)}</span></div>
     </div>
     <div class="th-right">
       <div class="th-clock" id="clockEl">--:--:--</div>
@@ -1131,6 +1139,13 @@ function renderSidebar(){
       const active = CURRENT_PAGE===it.id ? ' active':'';
       html += `<div class="sb-link${active}" onclick="route('${it.id}')"><span class="sbi">${it.icon||''}</span>${escapeHtml(it.label)}</div>`;
     });
+    if(g.group==='Kompetens' && DB.egnaSidor.length){
+      html += `<div class="sb-group-label">Egna sidor</div>`;
+      DB.egnaSidor.forEach(es=>{
+        const active = CURRENT_PAGE==='egen:'+es.id ? ' active':'';
+        html += `<div class="sb-link${active}" onclick="route('egen:${es.id}')"><span class="sbi">${es.ikon||'📄'}</span>${escapeHtml(es.titel)}</div>`;
+      });
+    }
   });
   html += `<div class="sb-foot"><img src="${LOGO_VGR}" alt="Region Västra Götaland" style="height:20px;width:auto;opacity:.7;display:block;"></div>`;
   document.getElementById('sidebar').innerHTML = html;
@@ -1167,13 +1182,17 @@ function crumbLabel(page){
   const map = {hem:'Översikt', information:'Information', utsattningar:'Utsättningar', personal:'Personal',
     formular:'Formulär', fordon:'Fordon', utbildning:'Utbildning', rutiner:'Rutiner / Riktlinjer', prov:'Prov & rättning',
     'mitt-konto':'Mitt konto', stationer:'Stationer', anvandare:'Användare', behorigheter:'Behörigheter',
-    'inskickade-formular':'Inskickade formulär'};
+    'inskickade-formular':'Inskickade formulär', anpassa:'Anpassa systemet'};
+  if(page && page.indexOf('egen:')===0){
+    const es = DB.egnaSidor.find(x=>x.id===page.slice(5));
+    return es? es.titel : 'Egen sida';
+  }
   return map[page]||page;
 }
 
 function renderTopbar(){
   document.getElementById('topbar').innerHTML = `
-    <div class="crumbs">Ambulansintranät&nbsp;/&nbsp;<b>${escapeHtml(crumbLabel(CURRENT_PAGE))}</b></div>
+    <div class="crumbs">${escapeHtml(DB.utseende.appNamn)}&nbsp;/&nbsp;<b>${escapeHtml(crumbLabel(CURRENT_PAGE))}</b></div>
   `;
   renderTopHeader();
 }
@@ -1279,6 +1298,8 @@ function renderPage(){
   else if(CURRENT_PAGE==='anvandare') html = pageAnvandare();
   else if(CURRENT_PAGE==='behorigheter') html = pageBehorigheter();
   else if(CURRENT_PAGE==='inskickade-formular') html = pageInskickade();
+  else if(CURRENT_PAGE==='anpassa') html = pageAnpassa();
+  else if(CURRENT_PAGE && CURRENT_PAGE.indexOf('egen:')===0) html = pageEgenSida(CURRENT_PAGE.slice(5));
   else html = '<div class="empty">Sidan hittades inte.</div>';
   c.innerHTML = html + pageFooterHtml();
 }
@@ -1287,8 +1308,8 @@ function pageFooterHtml(){
     <div class="app-footer">
       <img src="${LOGO_VGR}" alt="Region Västra Götaland">
       <div class="af-text">
-        <b>Sahlgrenska International Care</b>
-        <span>Ambulansintranät är ett internt verksamhetsstöd inom Region Västra Götaland</span>
+        <b>${escapeHtml(DB.utseende.appUndertext)}</b>
+        <span>${escapeHtml(DB.utseende.appNamn)} är ett internt verksamhetsstöd inom Region Västra Götaland</span>
       </div>
     </div>
   `;
@@ -1337,7 +1358,7 @@ function pageHem(){
       <div>
         <p class="page-sub" style="margin-bottom:2px;">Välkommen,</p>
         <h1 class="page-title" style="font-size:24px;">${escapeHtml(me.namn)}</h1>
-        <p class="page-sub">Ambulansintranät · Sahlgrenska International Care</p>
+        <p class="page-sub">${escapeHtml(DB.utseende.appNamn)} · ${escapeHtml(DB.utseende.appUndertext)}</p>
       </div>
     </div>
 
@@ -3313,6 +3334,93 @@ function delAnvandare(k){
   saveDB(); renderPage();
 }
 
+/* ================= ANPASSA SYSTEMET (utseende + egna sidor) ================= */
+function pageAnpassa(){
+  if(!isAdmin()) return pageAccessDenied();
+  const u = DB.utseende;
+  return `
+    <div class="page-head"><div><h1 class="page-title">Anpassa systemet</h1><p class="page-sub">Ändra utseende och lägg till egna sidor — helt utan att skriva kod</p></div></div>
+    <div class="card pad" style="margin-bottom:16px;max-width:520px;">
+      <b style="display:block;margin-bottom:12px;">Utseende</b>
+      <div class="grid2">
+        <div class="field"><span class="label">Accentfärg${hi('anpAccent')}</span><input type="color" id="anpAccent" value="${u.accent}" style="height:38px;padding:2px;width:100%;"></div>
+        <div class="field"><span class="label">Accentfärg, mörk/hover${hi('anpAccentDark')}</span><input type="color" id="anpAccentDark" value="${u.accentDark}" style="height:38px;padding:2px;width:100%;"></div>
+      </div>
+      <div class="field"><span class="label">Systemets namn${hi('anpNamn')}</span><input type="text" id="anpNamn" value="${escapeHtml(u.appNamn)}"></div>
+      <div class="field"><span class="label">Undertext / organisation${hi('anpUndertext')}</span><input type="text" id="anpUndertext" value="${escapeHtml(u.appUndertext)}"></div>
+      <button class="btn btn-primary btn-sm" onclick="sparaUtseende()">Spara utseende</button>
+    </div>
+    <div class="card pad">
+      <div class="page-head" style="margin-bottom:12px;">
+        <div><b>Egna sidor</b><p class="page-sub" style="margin:2px 0 0;">Skapa helt nya flikar i sidomenyn med eget innehåll.</p></div>
+        <button class="btn btn-primary btn-sm" onclick="oppnaEgenSidaModal()">+ Ny sida</button>
+      </div>
+      ${DB.egnaSidor.length===0? `<div class="empty">Inga egna sidor ännu.</div>` :
+        DB.egnaSidor.map(es=>`
+          <div class="list-row" style="display:flex;justify-content:space-between;align-items:center;">
+            <div><span style="margin-right:6px;">${escapeHtml(es.ikon||'📄')}</span><b>${escapeHtml(es.titel)}</b></div>
+            <div style="display:flex;gap:6px;">
+              <button class="btn btn-sm" onclick="route('egen:${es.id}')">Visa</button>
+              <button class="btn btn-sm" onclick="oppnaEgenSidaModal('${es.id}')">Redigera</button>
+              <button class="btn btn-danger btn-sm" onclick="taBortEgenSida('${es.id}')">Ta bort</button>
+            </div>
+          </div>`).join('')}
+    </div>
+  `;
+}
+function sparaUtseende(){
+  if(!requireAdmin()) return;
+  DB.utseende.accent = document.getElementById('anpAccent').value;
+  DB.utseende.accentDark = document.getElementById('anpAccentDark').value;
+  DB.utseende.appNamn = document.getElementById('anpNamn').value.trim() || 'Ambulansintranät';
+  DB.utseende.appUndertext = document.getElementById('anpUndertext').value.trim();
+  saveDB(); applyUtseende(); renderSidebar(); renderTopbar(); renderPage(); toast('Utseende sparat');
+}
+function oppnaEgenSidaModal(id){
+  if(!requireAdmin()) return;
+  const editing = id? DB.egnaSidor.find(x=>x.id===id) : null;
+  openModal(`
+    <div class="modal-head"><h3>${editing?'Redigera sida':'Ny sida'}</h3><button class="modal-close" onclick="closeModal()">✕</button></div>
+    <div class="modal-body">
+      <div class="grid2">
+        <div class="field"><span class="label">Titel</span><input type="text" id="esTitel" value="${editing?escapeHtml(editing.titel):''}" placeholder="ex: Kontaktlistor"></div>
+        <div class="field"><span class="label">Ikon (en emoji)</span><input type="text" id="esIkon" value="${editing?escapeHtml(editing.ikon||''):''}" placeholder="📄" maxlength="2"></div>
+      </div>
+      <div class="field"><span class="label">Innehåll</span><textarea id="esInnehall" rows="10" placeholder="Skriv fritt — texten visas med radbrytningar bevarade.">${editing?escapeHtml(editing.innehall||''):''}</textarea></div>
+    </div>
+    <div class="modal-foot"><button class="btn" onclick="closeModal()">Avbryt</button><button class="btn btn-primary" onclick="sparaEgenSida('${editing?editing.id:''}')">Spara</button></div>
+  `, true);
+}
+function sparaEgenSida(id){
+  const titel = document.getElementById('esTitel').value.trim();
+  if(!titel){ toast('Ange en titel'); return; }
+  const ikon = document.getElementById('esIkon').value.trim();
+  const innehall = document.getElementById('esInnehall').value;
+  if(id){
+    const es = DB.egnaSidor.find(x=>x.id===id);
+    Object.assign(es, {titel, ikon, innehall});
+  } else {
+    DB.egnaSidor.push({id:uid('es'), titel, ikon, innehall});
+  }
+  saveDB(); closeModal(); renderSidebar(); renderPage(); toast('Sida sparad');
+}
+function taBortEgenSida(id){
+  if(!confirm('Ta bort sidan? Detta går inte att ångra.')) return;
+  DB.egnaSidor = DB.egnaSidor.filter(x=>x.id!==id);
+  if(CURRENT_PAGE==='egen:'+id) CURRENT_PAGE='anpassa';
+  saveDB(); renderSidebar(); renderPage(); toast('Sida borttagen');
+}
+function pageEgenSida(id){
+  const es = DB.egnaSidor.find(x=>x.id===id);
+  if(!es) return `<div class="empty"><b>Sidan hittades inte</b>Den kan ha tagits bort.</div>`;
+  return `
+    <div class="page-head"><div><h1 class="page-title">${escapeHtml(es.ikon||'')} ${escapeHtml(es.titel)}</h1></div>
+      ${isAdmin()? `<button class="btn btn-sm" onclick="oppnaEgenSidaModal('${es.id}')">Redigera</button>` : ''}
+    </div>
+    <div class="card pad" style="white-space:pre-wrap;line-height:1.6;">${escapeHtml(es.innehall||'')||'<span class="hint">Inget innehåll ännu.</span>'}</div>
+  `;
+}
+
 /* ================= ADMIN: BEHÖRIGHETER ================= */
 function pageBehorigheter(){
   if(!isAdmin()) return pageAccessDenied();
@@ -3604,11 +3712,18 @@ let theme = localStorage.getItem(THEME_KEY) || 'light';
 function applyTheme(){ document.body.classList.toggle('dark-theme', theme==='dark'); }
 function setTheme(t){ theme = t; localStorage.setItem(THEME_KEY, t); applyTheme(); if(CURRENT_PAGE==='mitt-konto') renderPage(); }
 
+function applyUtseende(){
+  document.documentElement.style.setProperty('--accent', DB.utseende.accent);
+  document.documentElement.style.setProperty('--accent-dark', DB.utseende.accentDark);
+  document.title = DB.utseende.appNamn;
+}
 function initApp(){
   applyTheme();
   loadLocalDB(); // snabb lokal start (fungerar även offline)
+  applyUtseende();
   loadSession();
   initCloud(()=>{
+    applyUtseende();
     if(SESSION.konto && DB.inloggadeKonton.includes(SESSION.konto)){
       afterLogin();
     } else {

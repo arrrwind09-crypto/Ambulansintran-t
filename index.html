@@ -187,6 +187,19 @@
   .next-label{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;}
   .next-time{font-size:12.5px;color:var(--text);font-weight:700;}
 
+  /* ---------- redigeringsläge ---------- */
+  #editModeBanner:empty{display:none;}
+  .edit-mode-banner{position:sticky;top:0;z-index:60;display:flex;align-items:center;justify-content:space-between;gap:14px;background:#fff4d6;border-bottom:1px solid #e8c65a;color:#6b5410;padding:8px 20px;font-size:12.5px;font-weight:600;}
+  .edit-text{position:relative;}
+  .edit-pencil{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;background:var(--accent);color:#fff;font-size:9px;cursor:pointer;margin-left:6px;vertical-align:middle;opacity:.85;}
+  .edit-pencil:hover{opacity:1;}
+  .section-stack-default{display:flex;flex-direction:column;gap:16px;}
+  .section-wrap{position:relative;}
+  .section-controls{display:flex;gap:4px;margin-bottom:6px;}
+  .section-controls .btn{padding:3px 8px;font-size:11px;}
+  .section-hidden-preview{opacity:.5;}
+  .section-hidden-badge{font-size:10.5px;font-weight:700;color:#b7791f;background:#fff4d6;border-radius:4px;padding:2px 8px;display:inline-block;margin-bottom:6px;}
+
   .list-row{padding:12px 0;border-bottom:1px solid var(--border);}
   .list-row:last-child{border-bottom:none;}
 
@@ -316,12 +329,15 @@
   body.dark-theme .sb-status{ color:#5fd68a; }
   body.dark-theme .sb-foot{ color:#6f8683; }
   body.dark-theme .sb-foot img{ filter:brightness(0) invert(1); opacity:.6; }
+  body.dark-theme .edit-mode-banner{ background:#3a2f14; border-color:#6b5410; color:#fbbf24; }
+  body.dark-theme .section-hidden-badge{ background:#3a2f14; color:#fbbf24; }
 </style>
 </head>
 <body>
 <div id="login-screen"></div>
 <div id="shell" style="display:none;flex-direction:column;min-height:100vh;">
   <div id="topheader"></div>
+  <div id="editModeBanner"></div>
   <div id="app">
     <nav id="sidebar"></nav>
     <div id="main">
@@ -722,6 +738,9 @@ function seed(){
     vantandeKonton:[],
     utseende:{accent:'#1a7a4c', accentDark:'#125c39', appNamn:'Ambulansintranät', appUndertext:'Sahlgrenska International Care'},
     egnaSidor:[],
+    textOverrides:{},
+    sectionOrder:{},
+    hiddenSections:{},
     nastaId:100
   };
 }
@@ -1075,6 +1094,113 @@ function openModal(html, wide){
 function closeModal(){ document.getElementById('modal-backdrop').classList.remove('show'); }
 document.getElementById('modal-backdrop').addEventListener('click', e=>{ if(e.target.id==='modal-backdrop') closeModal(); });
 
+/* ---------------- Redigeringsläge: textredigering ---------------- */
+let EDIT_MODE = false;
+const TEXT_KEYS = {};
+function t(key, fallback){
+  TEXT_KEYS[key] = fallback;
+  const raw = DB.textOverrides ? DB.textOverrides[key] : undefined;
+  const val = (raw!==undefined && raw!==null && raw!=='') ? raw : fallback;
+  if(EDIT_MODE && isAdmin()){
+    return `<span class="edit-text">${escapeHtml(val)}<span class="edit-pencil" title="Redigera text" onclick="event.stopPropagation();openTextEditModal('${key}')">✎</span></span>`;
+  }
+  return escapeHtml(val);
+}
+function openTextEditModal(key){
+  if(!requireAdmin()) return;
+  const raw = DB.textOverrides ? DB.textOverrides[key] : undefined;
+  const isOverridden = raw!==undefined && raw!==null && raw!=='';
+  const current = isOverridden ? raw : (TEXT_KEYS[key]||'');
+  openModal(`
+    <div class="modal-head"><h3>Redigera text</h3><button class="modal-close" onclick="closeModal()">✕</button></div>
+    <div class="modal-body">
+      <div class="field"><span class="label">Text</span><textarea id="teVal" rows="3">${escapeHtml(current)}</textarea></div>
+      ${isOverridden? `<p class="hint">Denna text är ändrad från standardtexten.</p>`:''}
+    </div>
+    <div class="modal-foot">
+      ${isOverridden? `<button class="btn btn-danger btn-sm" onclick="resetTextOverride('${key}')">Återställ standard</button>`:''}
+      <button class="btn" onclick="closeModal()">Avbryt</button>
+      <button class="btn btn-primary" onclick="saveTextOverride('${key}')">Spara</button>
+    </div>
+  `);
+}
+function saveTextOverride(key){
+  if(!requireAdmin()) return;
+  const val = document.getElementById('teVal').value;
+  if(!DB.textOverrides) DB.textOverrides = {};
+  if(val.trim()===''){ delete DB.textOverrides[key]; } else { DB.textOverrides[key] = val; }
+  saveDB(); closeModal(); renderPage(); toast('Text uppdaterad');
+}
+function resetTextOverride(key){
+  if(!requireAdmin()) return;
+  if(DB.textOverrides) delete DB.textOverrides[key];
+  saveDB(); closeModal(); renderPage(); toast('Återställd till standardtext');
+}
+function toggleEditMode(){
+  if(!requireAdmin()) return;
+  EDIT_MODE = !EDIT_MODE;
+  renderEditModeBanner();
+  renderPage();
+  toast(EDIT_MODE? 'Redigeringsläge aktiverat — klicka på ✎ för text eller ▲▼🙈 för layout.' : 'Redigeringsläge avslutat');
+}
+function renderEditModeBanner(){
+  const el = document.getElementById('editModeBanner');
+  if(!el) return;
+  el.innerHTML = EDIT_MODE ? `
+    <div class="edit-mode-banner">
+      <span>🖊 Redigeringsläge aktivt — klicka på ✎ för att ändra text, eller ▲▼🙈 för att ändra layout.</span>
+      <button class="btn btn-sm" onclick="toggleEditMode()">Avsluta redigeringsläge</button>
+    </div>` : '';
+}
+
+/* ---------------- Redigeringsläge: sektionsordning per sida ---------------- */
+function renderSections(pageId, sections, wrapperClass){
+  const known = sections.map(s=>s.id);
+  let ord = Array.isArray(DB.sectionOrder[pageId]) ? DB.sectionOrder[pageId].filter(id=>known.includes(id)) : [];
+  known.forEach(id=>{ if(!ord.includes(id)) ord.push(id); });
+  if(JSON.stringify(ord)!==JSON.stringify(DB.sectionOrder[pageId]||[])){
+    DB.sectionOrder[pageId] = ord; saveDB();
+  }
+  const hidden = Array.isArray(DB.hiddenSections[pageId]) ? DB.hiddenSections[pageId] : [];
+  const bySid = {}; sections.forEach(s=>bySid[s.id]=s);
+  const editing = EDIT_MODE && isAdmin();
+  const cls = wrapperClass || 'section-stack-default';
+  let html = `<div class="section-stack ${cls}">`;
+  ord.forEach((id,idx)=>{
+    const s = bySid[id]; if(!s) return;
+    const isHidden = hidden.includes(id);
+    if(isHidden && !editing) return;
+    html += `<div class="section-wrap${isHidden?' section-hidden-preview':''}">
+      ${isHidden? `<div class="section-hidden-badge">Dold för användare</div>`:''}
+      ${editing? `
+        <div class="section-controls">
+          <button class="btn btn-sm" title="Flytta upp" ${idx===0?'disabled':''} onclick="moveSection('${pageId}','${id}',-1)">▲</button>
+          <button class="btn btn-sm" title="Flytta ner" ${idx===ord.length-1?'disabled':''} onclick="moveSection('${pageId}','${id}',1)">▼</button>
+          <button class="btn btn-sm" title="${isHidden?'Visa sektion':'Dölj sektion'}" onclick="toggleSectionHidden('${pageId}','${id}')">${isHidden?'👁 Visa':'🙈 Dölj'}</button>
+        </div>` : ''}
+      ${s.render()}
+    </div>`;
+  });
+  html += `</div>`;
+  return html;
+}
+function moveSection(pageId, id, dir){
+  if(!requireAdmin()) return;
+  const ord = DB.sectionOrder[pageId]; if(!Array.isArray(ord)) return;
+  const i = ord.indexOf(id); if(i<0) return;
+  const j = i+dir; if(j<0||j>=ord.length) return;
+  const tmp=ord[i]; ord[i]=ord[j]; ord[j]=tmp;
+  saveDB(); renderPage();
+}
+function toggleSectionHidden(pageId, id){
+  if(!requireAdmin()) return;
+  if(!Array.isArray(DB.hiddenSections[pageId])) DB.hiddenSections[pageId]=[];
+  const h = DB.hiddenSections[pageId];
+  const i = h.indexOf(id);
+  if(i>=0) h.splice(i,1); else h.push(id);
+  saveDB(); renderPage();
+}
+
 /* ---------------- Routing / Sidebar ---------------- */
 let CURRENT_PAGE = 'hem';
 
@@ -1278,6 +1404,7 @@ function route(page){
   renderSidebar();
   renderTopbar();
   renderPage();
+  renderEditModeBanner();
   window.scrollTo(0,0);
 }
 
@@ -1356,7 +1483,7 @@ function pageHem(){
   return `
     <div class="page-head">
       <div>
-        <p class="page-sub" style="margin-bottom:2px;">Välkommen,</p>
+        <p class="page-sub" style="margin-bottom:2px;">${t('page.hem.halsning','Välkommen,')}</p>
         <h1 class="page-title" style="font-size:24px;">${escapeHtml(me.namn)}</h1>
         <p class="page-sub">${escapeHtml(DB.utseende.appNamn)} · ${escapeHtml(DB.utseende.appUndertext)}</p>
       </div>
@@ -1364,54 +1491,57 @@ function pageHem(){
 
     <div class="card pad schema-banner">
       <div>
-        <div class="next-label">Nästa patrull</div>
+        <div class="next-label">${t('page.hem.nastapatrull','Nästa patrull')}</div>
         <div class="next-time" style="font-size:15px;">${escapeHtml(info.label)}</div>
       </div>
       <div class="countdown" id="countdownEl">--:--:--</div>
       <button class="btn btn-sm" onclick="openSchemaModal()">⏱ Ändra schema</button>
     </div>
 
-    <div class="hem-grid3">
-      <div class="card pad">
-        <div class="page-head" style="margin-bottom:10px;">
-          <b style="font-size:12.5px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);">Information</b>
-          <button class="btn btn-sm" onclick="openInfoModal()">+ Nytt</button>
-        </div>
-        ${DB.infoInlagg.length===0 ? `<div class="empty" style="padding:24px 10px;"><b>Inga inlägg ännu</b>Admin kan publicera information och nyheter här.</div>` :
-          DB.infoInlagg.slice().reverse().map(i=>`
-            <div class="list-row"><b>${escapeHtml(i.titel)}</b><div style="font-size:12.5px;color:var(--muted);margin-top:3px;">${escapeHtml(i.text)}</div>
-            <div style="font-size:11px;color:var(--muted);margin-top:4px;">${new Date(i.datum).toLocaleString('sv-SE')}</div></div>`).join('')}
-      </div>
-      <div class="card pad">
-        <b style="font-size:12.5px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:10px;">Senaste utsättningar</b>
-        ${senaste.length===0 ? `<div class="empty" style="padding:24px 10px;">Inga utsättningar ännu.</div>` :
-          senaste.map(u=>`
-            <div class="list-row">
-              <div style="display:flex;justify-content:space-between;">
-                <b>${escapeHtml(u.namn||fmtDate(u.datum))}</b>
-                <span class="badge badge-amber">${escapeHtml(u.status)}</span>
-              </div>
-              <div style="font-size:11.5px;color:var(--muted);">${fmtDate(u.datum)} · ${u.tid}</div>
-            </div>`).join('')}
-      </div>
-      <div class="card pad">
-        <b style="font-size:12.5px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:10px;">Fordonsstatus</b>
-        ${DB.fordon.length===0 ? `<div class="empty" style="padding:24px 10px;">Inga fordon registrerade.</div>` : `
-          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;">
-            ${fordonPerStatus.map(fs=>`<span class="badge ${fordonBadgeCls(fs.status)}">${fs.antal} ${escapeHtml(fs.status)}</span>`).join('')}
+    ${renderSections('hem', [
+      {id:'information', render: ()=>`
+        <div class="card pad">
+          <div class="page-head" style="margin-bottom:10px;">
+            <b style="font-size:12.5px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);">${t('page.hem.section.information.titel','Information')}</b>
+            <button class="btn btn-sm" onclick="openInfoModal()">+ Nytt</button>
           </div>
-          <div class="fordon-scroll">
-            ${DB.fordon.map(f=>`
-              <div class="list-row" style="display:flex;justify-content:space-between;align-items:center;">
-                <div><b>${escapeHtml(f.kod)}</b> <span style="color:var(--muted);font-size:11.5px;">— ${escapeHtml(f.typ)}</span>
-                  <div style="font-size:11px;color:var(--muted);">${escapeHtml(f.station)}</div>
+          ${DB.infoInlagg.length===0 ? `<div class="empty" style="padding:24px 10px;"><b>${t('page.hem.section.information.tom.rubrik','Inga inlägg ännu')}</b>${t('page.hem.section.information.tom.text','Admin kan publicera information och nyheter här.')}</div>` :
+            DB.infoInlagg.slice().reverse().map(i=>`
+              <div class="list-row"><b>${escapeHtml(i.titel)}</b><div style="font-size:12.5px;color:var(--muted);margin-top:3px;">${escapeHtml(i.text)}</div>
+              <div style="font-size:11px;color:var(--muted);margin-top:4px;">${new Date(i.datum).toLocaleString('sv-SE')}</div></div>`).join('')}
+        </div>`},
+      {id:'utsattningar', render: ()=>`
+        <div class="card pad">
+          <b style="font-size:12.5px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:10px;">${t('page.hem.section.utsattningar.titel','Senaste utsättningar')}</b>
+          ${senaste.length===0 ? `<div class="empty" style="padding:24px 10px;">${t('page.hem.section.utsattningar.tom','Inga utsättningar ännu.')}</div>` :
+            senaste.map(u=>`
+              <div class="list-row">
+                <div style="display:flex;justify-content:space-between;">
+                  <b>${escapeHtml(u.namn||fmtDate(u.datum))}</b>
+                  <span class="badge badge-amber">${escapeHtml(u.status)}</span>
                 </div>
-                <span class="badge ${fordonBadgeCls(f.status)}">${escapeHtml(f.status)}</span>
+                <div style="font-size:11.5px;color:var(--muted);">${fmtDate(u.datum)} · ${u.tid}</div>
               </div>`).join('')}
-          </div>
-        `}
-      </div>
-    </div>
+        </div>`},
+      {id:'fordonsstatus', render: ()=>`
+        <div class="card pad">
+          <b style="font-size:12.5px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:10px;">${t('page.hem.section.fordon.titel','Fordonsstatus')}</b>
+          ${DB.fordon.length===0 ? `<div class="empty" style="padding:24px 10px;">${t('page.hem.section.fordon.tom','Inga fordon registrerade.')}</div>` : `
+            <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;">
+              ${fordonPerStatus.map(fs=>`<span class="badge ${fordonBadgeCls(fs.status)}">${fs.antal} ${escapeHtml(fs.status)}</span>`).join('')}
+            </div>
+            <div class="fordon-scroll">
+              ${DB.fordon.map(f=>`
+                <div class="list-row" style="display:flex;justify-content:space-between;align-items:center;">
+                  <div><b>${escapeHtml(f.kod)}</b> <span style="color:var(--muted);font-size:11.5px;">— ${escapeHtml(f.typ)}</span>
+                    <div style="font-size:11px;color:var(--muted);">${escapeHtml(f.station)}</div>
+                  </div>
+                  <span class="badge ${fordonBadgeCls(f.status)}">${escapeHtml(f.status)}</span>
+                </div>`).join('')}
+            </div>
+          `}
+        </div>`},
+    ], 'hem-grid3')}
   `;
 }
 
@@ -1464,7 +1594,7 @@ function saveInfo(){
 function pageInformation(){
   return `
     <div class="page-head">
-      <div><h1 class="page-title">Information</h1><p class="page-sub">Nyheter och meddelanden till all personal</p></div>
+      <div><h1 class="page-title">${t('page.information.title','Information')}</h1><p class="page-sub">${t('page.information.sub','Nyheter och meddelanden till all personal')}</p></div>
       <button class="btn btn-primary" onclick="openInfoModal2()">+ Nytt inlägg</button>
     </div>
     <div class="card pad">
@@ -1504,7 +1634,7 @@ function pageUtsattningar(){
 
   return `
     <div class="page-head">
-      <div><h1 class="page-title">Utsättningar</h1><p class="page-sub">Operativa utsättningar per station</p></div>
+      <div><h1 class="page-title">${t('page.utsattningar.title','Utsättningar')}</h1><p class="page-sub">${t('page.utsattningar.sub','Operativa utsättningar per station')}</p></div>
       <div style="display:flex;gap:8px;">
         <button class="btn" onclick="utsattningVisaAvslutade=!utsattningVisaAvslutade; renderPage();">${utsattningVisaAvslutade?'Dölj avslutade':'Visa avslutade'}</button>
         <button class="btn btn-primary" onclick="openUtsattningModal()">+ Skapa utsättning</button>
@@ -1697,7 +1827,7 @@ function pagePersonal(){
   const ovriga = DB.personal.filter(p=>p.status!=='Aktiv' && matchar(p)).sort((a,b)=>personRankScore(a)-personRankScore(b));
   return `
     <div class="page-head">
-      <div><h1 class="page-title">Personal</h1><p class="page-sub">Samtlig personal och behörigheter</p></div>
+      <div><h1 class="page-title">${t('page.personal.title','Personal')}</h1><p class="page-sub">${t('page.personal.sub','Samtlig personal och behörigheter')}</p></div>
       ${isAdmin()? `<button class="btn btn-primary" onclick="openPersonalModal()">+ Lägg till personal</button>` : `<span class="hint">Adminbehörighet krävs för att lägga till/redigera personal</span>`}
     </div>
     <div class="field" style="max-width:320px;">
@@ -1921,7 +2051,7 @@ function pageFormular(){
     {id:'akutjournal', ikon:'🏥', titel:'Akutjournal', beskrivning:'Triage och vitalparametrar vid ankomst till akutmottagning, enligt NEWS2.'},
   ];
   return `
-    <div class="page-head"><div><h1 class="page-title">Formulär</h1><p class="page-sub">Rapporter och journalföring</p></div></div>
+    <div class="page-head"><div><h1 class="page-title">${t('page.formular.title','Formulär')}</h1><p class="page-sub">${t('page.formular.sub','Rapporter och journalföring')}</p></div></div>
     <div class="formular-grid">
       ${formularTyper.map(f=>`
         <div class="card pad formular-card" onclick="window.__formShowNew='${f.id}'; renderPage();">
@@ -2611,7 +2741,7 @@ function pageFordon(){
   else if(fordonFilter!=='Alla stationer') list = list.filter(f=>f.station===fordonFilter);
   return `
     <div class="page-head">
-      <div><h1 class="page-title">Fordon</h1><p class="page-sub">Eget fordonsregister</p></div>
+      <div><h1 class="page-title">${t('page.fordon.title','Fordon')}</h1><p class="page-sub">${t('page.fordon.sub','Eget fordonsregister')}</p></div>
       <div style="display:flex;gap:8px;">
         ${isAdmin()? `<button class="btn btn-primary" onclick="openFordonModal()">+ Lägg till fordon</button>` : `<span class="hint">Adminbehörighet krävs</span>`}
         <button class="btn" onclick="renderPage();toast('Uppdaterat')">Uppdatera</button>
@@ -2687,7 +2817,7 @@ function pageStationer(){
   if(!isAdmin()) return pageAccessDenied();
   return `
     <div class="page-head">
-      <div><h1 class="page-title">Stationer</h1><p class="page-sub">Hantera vilka stationer som finns i systemet</p></div>
+      <div><h1 class="page-title">${t('page.stationer.title','Stationer')}</h1><p class="page-sub">${t('page.stationer.sub','Hantera vilka stationer som finns i systemet')}</p></div>
       <button class="btn btn-primary" onclick="openStationModal()">+ Lägg till station</button>
     </div>
     <div class="card">
@@ -2745,7 +2875,7 @@ function pageUtbildning(){
   const me = currentUser();
   return `
     <div class="page-head">
-      <div><h1 class="page-title">Utbildning</h1><p class="page-sub">Moduler per yrkeskategori</p></div>
+      <div><h1 class="page-title">${t('page.utbildning.title','Utbildning')}</h1><p class="page-sub">${t('page.utbildning.sub','Moduler per yrkeskategori')}</p></div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;">
         ${isAdmin()? `<button class="btn" onclick="addKategori()">+ Kategori</button><button class="btn btn-primary" onclick="openModulModal()">+ Ny modul</button>` : ''}
       </div>
@@ -2995,7 +3125,7 @@ function pageProv(){
     });
   });
   return `
-    <div class="page-head"><div><h1 class="page-title">Prov & rättning</h1><p class="page-sub">Genomförda och väntande prov</p></div></div>
+    <div class="page-head"><div><h1 class="page-title">${t('page.prov.title','Prov & rättning')}</h1><p class="page-sub">${t('page.prov.sub','Genomförda och väntande prov')}</p></div></div>
     <div class="card pad">
       ${rows.length===0 ? `<div class="empty"><div class="big">📝</div><b>Inga genomförda prov ännu</b>Genomförda prov dyker upp här för rättning och uppföljning.</div>` :
         rows.map(({p,m,u})=>`
@@ -3049,7 +3179,7 @@ function pageRutiner(scopeType, scopeName){
   const katFilter = rutinKatFilter[key] || 'Alla';
   const visadeRutiner = DB.rutiner[key].filter(r=> katFilter==='Alla' || r.kategori===katFilter);
   return `
-    <div class="page-head"><div><h1 class="page-title">Rutiner / Riktlinjer</h1><p class="page-sub">${scopeType==='global'?'Gemensamma rutiner och riktlinjer':'Rutiner för '+escapeHtml(scopeName)}</p></div>
+    <div class="page-head"><div><h1 class="page-title">${t('page.rutiner.title','Rutiner / Riktlinjer')}</h1><p class="page-sub">${scopeType==='global'? t('page.rutiner.sub','Gemensamma rutiner och riktlinjer') : 'Rutiner för '+escapeHtml(scopeName)}</p></div>
       ${isAdmin()? `<button class="btn btn-primary" onclick="openRutinModal('${key}')">+ Lägg till</button>` : ''}
     </div>
     <div class="tabbar">
@@ -3123,7 +3253,7 @@ function pageMittKonto(){
   const me = currentUser();
   const adminKonton = DB.inloggadeKonton.filter(k=>DB.kontoAdmin[k]);
   return `
-    <div class="page-head"><div><h1 class="page-title">Mitt konto</h1><p class="page-sub">Dina uppgifter, behörigheter och inställningar</p></div></div>
+    <div class="page-head"><div><h1 class="page-title">${t('page.mittkonto.title','Mitt konto')}</h1><p class="page-sub">${t('page.mittkonto.sub','Dina uppgifter, behörigheter och inställningar')}</p></div></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;max-width:800px;">
       <div class="card pad">
         <b style="display:block;margin-bottom:12px;">Uppgifter</b>
@@ -3225,7 +3355,7 @@ function bytMittLosenord(){
 function pageAnvandare(){
   if(!isAdmin()) return pageAccessDenied();
   return `
-    <div class="page-head"><div><h1 class="page-title">Användare</h1><p class="page-sub">Inloggningskonton, kopplad personal och adminbehörighet</p></div>
+    <div class="page-head"><div><h1 class="page-title">${t('page.anvandare.title','Användare')}</h1><p class="page-sub">${t('page.anvandare.sub','Inloggningskonton, kopplad personal och adminbehörighet')}</p></div>
       <button class="btn btn-primary" onclick="addAnvandare()">+ Nytt konto</button>
     </div>
     <div class="card pad" style="margin-bottom:16px;">
@@ -3339,7 +3469,12 @@ function pageAnpassa(){
   if(!isAdmin()) return pageAccessDenied();
   const u = DB.utseende;
   return `
-    <div class="page-head"><div><h1 class="page-title">Anpassa systemet</h1><p class="page-sub">Ändra utseende och lägg till egna sidor — helt utan att skriva kod</p></div></div>
+    <div class="page-head"><div><h1 class="page-title">${t('page.anpassa.title','Anpassa systemet')}</h1><p class="page-sub">${t('page.anpassa.sub','Ändra utseende och lägg till egna sidor — helt utan att skriva kod')}</p></div></div>
+    <div class="card pad" style="margin-bottom:16px;max-width:640px;">
+      <b style="display:block;margin-bottom:4px;">Redigeringsläge</b>
+      <p class="page-sub" style="margin-bottom:12px;">Aktivera för att redigera text och kortordning direkt ute på sidorna, utan att skriva kod.</p>
+      <button class="btn ${EDIT_MODE?'btn-danger':'btn-primary'} btn-sm" onclick="toggleEditMode()">${EDIT_MODE? 'Avsluta redigeringsläge' : '🖊 Starta redigeringsläge'}</button>
+    </div>
     <div class="card pad" style="margin-bottom:16px;max-width:520px;">
       <b style="display:block;margin-bottom:12px;">Utseende</b>
       <div class="grid2">
@@ -3426,7 +3561,7 @@ function pageBehorigheter(){
   if(!isAdmin()) return pageAccessDenied();
   const tjanster = BEHORIGHET_FALT;
   return `
-    <div class="page-head"><div><h1 class="page-title">Behörigheter</h1><p class="page-sub">Översikt över samtlig personals tjänstebehörigheter</p></div></div>
+    <div class="page-head"><div><h1 class="page-title">${t('page.behorigheter.title','Behörigheter')}</h1><p class="page-sub">${t('page.behorigheter.sub','Översikt över samtlig personals tjänstebehörigheter')}</p></div></div>
     <div class="card" style="overflow:auto;">
       <table style="width:100%;border-collapse:collapse;font-size:12.5px;">
         <thead><tr style="background:#f7f8fb;">
@@ -3465,7 +3600,7 @@ function pageInskickade(){
   const kategoriAntal = {Skaderapporter:skador.length, SBAR:sbars.length, Journal:journaler.length, Akutjournal:akutjournaler.length};
 
   return `
-    <div class="page-head"><div><h1 class="page-title">Inskickade formulär</h1><p class="page-sub">Alla inlämnade formulär från personalen</p></div></div>
+    <div class="page-head"><div><h1 class="page-title">${t('page.inskickade.title','Inskickade formulär')}</h1><p class="page-sub">${t('page.inskickade.sub','Alla inlämnade formulär från personalen')}</p></div></div>
     <div class="tabbar">
       ${['Alla','Skaderapporter','SBAR','Journal','Akutjournal'].map(k=>`<div class="tab ${inskickadeKategori===k?'active':''}" onclick="inskickadeKategori='${k}';renderPage();">${k}${k==='Alla'?'':' ('+kategoriAntal[k]+')'}</div>`).join('')}
     </div>

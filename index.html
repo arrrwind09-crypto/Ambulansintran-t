@@ -1829,10 +1829,10 @@ function pagePersonal(){
   `;
 }
 function personCard(p){
-  const badge = p.status==='Aktiv'?'badge-green':'badge-amber';
+  const badge = p.status==='Aktiv'?'badge-green':(p.status==='Semi-Aktiv'?'badge-amber':'badge-gray');
   return `<div class="pers-card">
     <div class="toprow">
-      <div class="avatar" style="background:${p.status==='Aktiv'?'var(--accent)':'#c9a227'};flex-shrink:0;">${avatarHtml(p)}</div>
+      <div class="avatar" style="background:${p.status==='Aktiv'?'var(--accent)':(p.status==='Semi-Aktiv'?'#c9a227':'#8b95a1')};flex-shrink:0;">${avatarHtml(p)}</div>
       <div class="flex1">
         <b>${escapeHtml(p.namn)} ${p.favorit?'⭐':''}</b>
         <span>${escapeHtml(personHighestRoll(p))}${p.telefon? ' · '+escapeHtml(p.telefon) : ''}</span>
@@ -1867,6 +1867,9 @@ function openPersonalModal(id){
       </div>
       <div class="field"><span class="label">Yrkesroll</span>
         <select id="pRoll">${roles.map(r=>`<option ${editing&&editing.roll===r?'selected':''}>${r}</option>`).join('')}</select>
+      </div>
+      <div class="field"><span class="label">Aktivitet</span>
+        <select id="pStatus">${['Aktiv','Semi-Aktiv','Inaktiv'].map(s=>`<option ${(editing?editing.status:'Aktiv')===s?'selected':''}>${s}</option>`).join('')}</select>
       </div>
       <div class="field"><label style="display:flex;align-items:center;gap:8px;font-size:12.5px;"><input type="checkbox" id="pFavorit" ${editing&&editing.favorit?'checked':''}> ⭐ Personal favoritmarkerad</label></div>
       <div class="field"><span class="label">Kopplad inloggning (valfritt)</span>
@@ -2010,13 +2013,14 @@ function savePersonal(id){
   const namn = document.getElementById('pNamn').value.trim();
   if(!namn){ toast('Ange namn'); return; }
   const roll = document.getElementById('pRoll').value;
+  const status = document.getElementById('pStatus').value;
   const favorit = document.getElementById('pFavorit').checked;
   const kopplatKonto = document.getElementById('pKonto').value;
   if(id){
     const p = DB.personal.find(x=>x.id===id);
-    Object.assign(p,{namn,roll,favorit,kopplatKonto});
+    Object.assign(p,{namn,roll,status,favorit,kopplatKonto});
   } else {
-    DB.personal.push({id:uid('p'), namn, roll, status:'Aktiv', favorit, kopplatKonto, notering:'',
+    DB.personal.push({id:uid('p'), namn, roll, status, favorit, kopplatKonto, notering:'',
       behorigheter:Object.fromEntries(BEHORIGHET_FALT.map(t=>[t,false]))});
   }
   saveDB(); closeModal(); renderPage(); toast('Personal sparad');

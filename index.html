@@ -259,8 +259,20 @@
 
   .prog-bar{height:6px;border-radius:4px;background:#eef1f7;overflow:hidden;margin:6px 0;}
   .prog-bar > div{height:100%;background:var(--accent);}
-  .quiz-progbar{height:6px;border-radius:4px;background:#eef1f7;overflow:hidden;margin:14px 0 18px;}
-  .quiz-progbar > div{height:100%;background:var(--accent);}
+  .quiz-progbar{height:6px;border-radius:4px;background:#eef1f7;overflow:hidden;margin:14px 0;}
+  .quiz-progbar > div{height:100%;background:var(--accent);transition:width .2s ease;}
+  .quiz-dots{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:20px;}
+  .quiz-dot{width:28px;height:28px;border-radius:50%;background:#eef1f7;color:var(--muted);display:flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:700;cursor:pointer;border:2px solid transparent;flex-shrink:0;}
+  .quiz-dot:hover{background:#e2e8f4;}
+  .quiz-dot.answered{background:var(--green-bg);color:var(--accent-dark);}
+  .quiz-dot.current{border-color:var(--accent);background:var(--accent);color:#fff;}
+  .quiz-card{max-width:720px;margin:0 auto 20px;}
+  .quiz-img{max-width:100%;border-radius:8px;margin-bottom:16px;display:block;}
+  .quiz-question-text{display:block;font-size:16px;line-height:1.5;margin-bottom:18px;white-space:pre-wrap;}
+  .quiz-answers textarea{width:100%;}
+  .quiz-opt{display:flex;gap:10px;align-items:center;padding:11px 14px;border:1px solid var(--border);border-radius:8px;margin-bottom:8px;cursor:pointer;font-size:13.5px;}
+  .quiz-opt:hover{background:#f7f9fb;border-color:#c7d0da;}
+  .quiz-footer-nav{max-width:720px;margin:0 auto;display:flex;justify-content:space-between;gap:10px;}
 
   ::-webkit-scrollbar{width:9px;height:9px;}
   ::-webkit-scrollbar-thumb{background:#c9cfdb;border-radius:5px;}
@@ -322,6 +334,11 @@
   body.dark-theme .badge-red{ color:#f87171; }
   body.dark-theme .badge-amber{ color:#fbbf24; }
   body.dark-theme .badge-gray{ background:#2a3538; color:#c3ccca; }
+  body.dark-theme .quiz-dot{ background:#2a3538; color:#c3ccca; }
+  body.dark-theme .quiz-dot.answered{ background:#173a2e; color:#5cc9a7; }
+  body.dark-theme .quiz-dot:hover{ background:#333f42; }
+  body.dark-theme .quiz-progbar{ background:#2a3538; }
+  body.dark-theme .quiz-opt:hover{ background:#232d2c; }
   body.dark-theme .veh-icon{ background:#2a3538; color:#c3ccca; }
   body.dark-theme .veh-flag{ color:#fbbf24; }
   body.dark-theme .mod-note{ color:#fbbf24; }
@@ -574,19 +591,19 @@ function seed(){
         beskrivning:'15 frågor hämtade från det riktiga urvalsformuläret. Fritextsvar, rättas manuellt av utbildare.', steg:['Teori','Prov'],
         prov:{godkantGrans:80, maxForsok:3, fragor:[
           {id:'m3q1', typ:'Fritext', text:'Vad är PVK & vad gör den för nytta hos en patient?', poang:1, bild:'img/prov/m3q1.jpg'},
-          {id:'m3q2', typ:'Fritext', text:'I en vårdambulans så kan besättningen bestå av.\n( 2st Svar)\n\nAlternativ: A) Två Ambsjv  B) Två Ambssk  C) En ambssk & en ambsjv', poang:1, bild:'img/prov/m3q2.jpg'},
+          {id:'m3q2', typ:'Kryssruta', text:'I en vårdambulans så kan besättningen bestå av.\n( 2st Svar)', poang:1, alt:{A:'Två Ambsjv', B:'Två Ambssk', C:'En ambssk & en ambsjv'}, bild:'img/prov/m3q2.jpg'},
           {id:'m3q3', typ:'Fritext', text:'Vem bär denna väst & vad innebär rollen ?', poang:1, bild:'img/prov/m3q3.jpg'},
-          {id:'m3q4', typ:'Fritext', text:'Vid en trafikolycka så uppmärksammar du att föraren sitter vid ratten och är vid medvetande, personen klagar på nacksmärta samt ont i ryggen. Vad gör du ?\n\nAlternativ: A) Du sätter dig i baksätet och säkrar upp så att huvudet hålls rakt, monterar på nackkrage för att sedan montera på en spineboard och drar sedan ut personen ur bakrutan.  B) Du avvaktar så att brandkåren kan klippa upp taket för att sedan lyfta ur personen ur bilen.  C) Du ber personen att gå ur bilen och sätta sig i ambulansen.', poang:1},
+          {id:'m3q4', typ:'Flerval', text:'Vid en trafikolycka så uppmärksammar du att föraren sitter vid ratten och är vid medvetande, personen klagar på nacksmärta samt ont i ryggen. Vad gör du ?', poang:1, alt:{A:'Du sätter dig i baksätet och säkrar upp så att huvudet hålls rakt, monterar på nackkrage för att sedan montera på en spineboard och drar sedan ut personen ur bakrutan.', B:'Du avvaktar så att brandkåren kan klippa upp taket för att sedan lyfta ur personen ur bilen.', C:'Du ber personen att gå ur bilen och sätta sig i ambulansen.'}},
           {id:'m3q5', typ:'Fritext', text:'Du får larm om en medvetslös person, i vilken ordning gör du en bedömning av patienten? Beskriv i punktform.', poang:1},
           {id:'m3q6', typ:'Fritext', text:'Vad gör en LUCAS?', poang:1, bild:'img/prov/m3q6.jpg'},
-          {id:'m3q7', typ:'Fritext', text:'Vad är det vanligaste smärtstillande läkemedlet som man tillhanda har en patient med en extrem smärta?\n\nAlternativ: A) Adrenalin  B) Paracetamol  C) Morfin  D) Antabus', poang:1},
+          {id:'m3q7', typ:'Flerval', text:'Vad är det vanligaste smärtstillande läkemedlet som man tillhanda har en patient med en extrem smärta?', poang:1, alt:{A:'Adrenalin', B:'Paracetamol', C:'Morfin', D:'Antabus'}},
           {id:'m3q8', typ:'Fritext', text:'Vem bär denna väst & vad innebär rollen ?', poang:1, bild:'img/prov/m3q8.jpg'},
           {id:'m3q9', typ:'Fritext', text:'Du kommer fram till en person som är medvetslös, du märker att personen inte har någon puls & inte reagerar på smärtstimulering. Vad gör du ?', poang:1},
-          {id:'m3q10', typ:'Fritext', text:'Vad innebär RLS (Reaction Level Scale)\n\nAlternativ: A) En bedömningsmall för klassificering av medvetande eller medvetslöshet.  B) En bedömningsmall för reaktion för smärta.  C) En bedömningsmall för reaktionsförmåga.', poang:1},
+          {id:'m3q10', typ:'Flerval', text:'Vad innebär RLS (Reaction Level Scale)', poang:1, alt:{A:'En bedömningsmall för klassificering av medvetande eller medvetslöshet.', B:'En bedömningsmall för reaktion för smärta.', C:'En bedömningsmall för reaktionsförmåga.'}},
           {id:'m3q11', typ:'Fritext', text:'Du åker på ett larm om en skottskadad polis, platsen är säkrad och du får information om att han är skjuten i armen samt i bröstet. Vad vidtar du för åtgärder ?', poang:1},
           {id:'m3q12', typ:'Fritext', text:'Du får larm om en bilolycka på E18 Norra vid 16:00 tiden, ni är först på plats & du ser att två bilar har kolliderat, bilen bakom har kört in i bilen framför. Beskriv utförligt & noga vad du som ambulanssjukvårdare ska göra på platsen.', poang:1, bild:'img/prov/m3q12.jpg'},
           {id:'m3q13', typ:'Fritext', text:'Vad är skillnaden mellan en Ambulanssjukvårdare & en Ambulanssjuksköterska ?', poang:1, bild:'img/prov/m3q13.jpg'},
-          {id:'m3q14', typ:'Fritext', text:'I vilken takt gör man HLR i ?\n\nAlternativ: A) 30 kompressioner, två inblåsningar.  B) Tänker på låten stayin alive\'  C) 15 kompressioner, 1 inblåsning', poang:1, bild:'img/prov/m3q14.jpg'},
+          {id:'m3q14', typ:'Flerval', text:'I vilken takt gör man HLR i ?', poang:1, alt:{A:'30 kompressioner, två inblåsningar.', B:'Tänker på låten stayin alive\'', C:'15 kompressioner, 1 inblåsning'}, bild:'img/prov/m3q14.jpg'},
           {id:'m3q15', typ:'Fritext', text:'Vad är några viktiga personliga egenskaper som Ambulanssjukvårdare?', poang:1}
         ]}},
       {id:'m4', namn:'Teoriprov – Ambulanssjuksköterska', yrkeskategori:'Ambulanssjuksköterska', niva:'Grundnivå', tid:35,
@@ -598,9 +615,9 @@ function seed(){
           {id:'m4q4', typ:'Fritext', text:'Nämn minst tre stycken olika läkemedel och beskrivs vad de används till samt dosering.', poang:1},
           {id:'m4q5', typ:'Fritext', text:'Beskriv rollen som medicinskt ansvarig ( Utveckla , Minst 50 ord )', poang:1},
           {id:'m4q6', typ:'Fritext', text:'Vilka sätt kan man administrera olika typer av läkemedel?', poang:1},
-          {id:'m4q7', typ:'Fritext', text:'Du kommer till en trafikolycka och märker att en patient inte kan stödja på sina ben, har fria luftvägar och andas. Har en puls på 115 och en andningsfrekvens på 18. Vilken triageringsfärg samt prio använder du dig av?\n\nAlternativ: A) Prioritet 1  B) Prioritet 2  C) Prioritet 3  D) Annat alternativ', poang:1, bild:'img/prov/m4q7.jpg'},
+          {id:'m4q7', typ:'Flerval', text:'Du kommer till en trafikolycka och märker att en patient inte kan stödja på sina ben, har fria luftvägar och andas. Har en puls på 115 och en andningsfrekvens på 18. Vilken triageringsfärg samt prio använder du dig av?', poang:1, alt:{A:'Prioritet 1', B:'Prioritet 2', C:'Prioritet 3', D:'Annat alternativ'}, bild:'img/prov/m4q7.jpg'},
           {id:'m4q8', typ:'Fritext', text:'Beskriv hur du agerar vid ankomst till ett larm gällande hjärtstopp? Personen verkar ligga stilla på golvet. Det har gått ca 9 min sen larmet inkom.', poang:1},
-          {id:'m4q9', typ:'Fritext', text:'Vad är syftet med en intubering?\n\nAlternativ: A) Ge näring/läkemedel direkt till magsäcken  B) Säkerställa en fri luftväg  C) Stoppa hjärtstillestånd  D) Behandla högt blodtryck  E) Underlätta administration av anestesi  F) Förbättra blodcirkulationen', poang:1},
+          {id:'m4q9', typ:'Kryssruta', text:'Vad är syftet med en intubering?', poang:1, alt:{A:'Ge näring/läkemedel direkt till magsäcken', B:'Säkerställa en fri luftväg', C:'Stoppa hjärtstillestånd', D:'Behandla högt blodtryck', E:'Underlätta administration av anestesi', F:'Förbättra blodcirkulationen'}},
           {id:'m4q10', typ:'Fritext', text:'Hur kontrollerar du ifall en person har fått en hjärnskakning?', poang:1},
           {id:'m4q11', typ:'Fritext', text:'Du och en ambulanssjukvårdare bemannar kvällens akutambulans. Ni får in ett prioriterat ärende till en skola norr om staden. Ärendet gäller en pojke, 9 år gammal som har trillat och man misstänker att pojkens ben har brutits. Han skall ha lekt i en lekpark och ramlat konstigt med sitt ben när han hoppade ned från ett hopptorn. Under framkomst får ni tilläggsinformation att pojken också uppges vara allergisk, men oklart mot vad.', poang:1},
           {id:'m4q12', typ:'Fritext', text:'Bedömning/Diagnotisering:\nSamma ärende som i ovan, men under behandlingen så får pojken Morfin (Smärtstillande) för sin smärta. Efter ca 5-10 minuter observerar ni att pojkens tillstånd försämras och han verkar få Anafylaxi. Vad kan detta betyda och hur kan vi motverka effekten?', poang:1}
@@ -632,36 +649,36 @@ function seed(){
       {id:'m6', namn:'Teoriprov – Läkare', yrkeskategori:'Läkare', niva:'Fördjupningsnivå', tid:45,
         beskrivning:'31 frågor hämtade från det riktiga urvalsformuläret. Fritextsvar, rättas manuellt av utbildare.', steg:['Teori','Prov'],
         prov:{godkantGrans:83, maxForsok:3, fragor:[
-          {id:'m6q1', typ:'Fritext', text:'Vad är en av de viktigaste uppgifterna för läkaren i prehospital akutvård?\n\nAlternativ: A) Att enbart utföra diagnostiska tester  B) Att snabbt bedöma och behandla allvarliga medicinska tillstånd utanför sjukhus  C) Att skriva ut recept till patienter för långvarig behandling  D) Att förbereda sjukhuspersonal för ankomsten av patienter', poang:1},
-          {id:'m6q2', typ:'Fritext', text:'Vad är en akutläkarbils huvudsakliga fördel jämfört med en vanlig ambulans?\n\nAlternativ: A) Den är snabbare än en ambulans  B) Den har en läkare ombord som kan ge avancerad behandling på plats  C) Den kan bara användas för hjärtstopp  D) Den transporterar patienter till sjukhus utan medicinsk bedömning', poang:1},
-          {id:'m6q3', typ:'Fritext', text:'Vilken situation är en ambulanshelikopter särskilt användbar för?\n\nAlternativ: A) Transport av patienter från ett sjukhus till ett annat  B) Snabb transport och behandling av patienter på avlägsna eller svåråtkomliga områden  C) Förberedelser av sjukhus inför inkommande patienter  D) Endast för icke-akuta tillstånd', poang:1},
+          {id:'m6q1', typ:'Flerval', text:'Vad är en av de viktigaste uppgifterna för läkaren i prehospital akutvård?', poang:1, alt:{A:'Att enbart utföra diagnostiska tester', B:'Att snabbt bedöma och behandla allvarliga medicinska tillstånd utanför sjukhus', C:'Att skriva ut recept till patienter för långvarig behandling', D:'Att förbereda sjukhuspersonal för ankomsten av patienter'}},
+          {id:'m6q2', typ:'Flerval', text:'Vad är en akutläkarbils huvudsakliga fördel jämfört med en vanlig ambulans?', poang:1, alt:{A:'Den är snabbare än en ambulans', B:'Den har en läkare ombord som kan ge avancerad behandling på plats', C:'Den kan bara användas för hjärtstopp', D:'Den transporterar patienter till sjukhus utan medicinsk bedömning'}},
+          {id:'m6q3', typ:'Flerval', text:'Vilken situation är en ambulanshelikopter särskilt användbar för?', poang:1, alt:{A:'Transport av patienter från ett sjukhus till ett annat', B:'Snabb transport och behandling av patienter på avlägsna eller svåråtkomliga områden', C:'Förberedelser av sjukhus inför inkommande patienter', D:'Endast för icke-akuta tillstånd'}},
           {id:'m6q4', typ:'Fritext', text:'Vid misstänkt hjärtstopp, hur genomför du en bedömning av medvetande, andning och puls, och vad är de omedelbara åtgärderna som ska vidtas för att säkerställa effektiv hjärt-lungräddning?', poang:1},
           {id:'m6q5', typ:'Fritext', text:'Vid akut andningssvikt, vilka tecken indikerar behovet av intubation, och vilka åtgärder ska du vidta för att säkerställa effektiv ventilation innan intubationen?', poang:1},
           {id:'m6q6', typ:'Fritext', text:'Hur hanterar du en patient med en öppen fraktur vid lårbenet. PAT har en kraftig blödning, från artären i låret. Vilka åtgärder prioriterar du för att stabilisera patientens tillstånd? ( Skadan sitter för långt upp för TQ )', poang:1},
-          {id:'m6q7', typ:'Fritext', text:'Vilken åtgärd bör göras först vid en traumahändelse?\'\n\nAlternativ: A) Kontrollera patientens neurologiska status  B) Säkerställ att området är tryggt  C) Applicera ett tryckförband  D) Påbörja hjärt-lungräddning', poang:1},
-          {id:'m6q8', typ:'Fritext', text:'Vilken metod används som sista utväg vid kraftiga blödningar?\n\nAlternativ: A) Intubation  B) Syrgasbehandling  C) Tornique  D) Smärtlindring', poang:1},
+          {id:'m6q7', typ:'Flerval', text:'Vilken åtgärd bör göras först vid en traumahändelse?\'', poang:1, alt:{A:'Kontrollera patientens neurologiska status', B:'Säkerställ att området är tryggt', C:'Applicera ett tryckförband', D:'Påbörja hjärt-lungräddning'}},
+          {id:'m6q8', typ:'Flerval', text:'Vilken metod används som sista utväg vid kraftiga blödningar?', poang:1, alt:{A:'Intubation', B:'Syrgasbehandling', C:'Tornique', D:'Smärtlindring'}},
           {id:'m6q9', typ:'Fritext', text:'Förklara varför det är viktigt att följa ABCDE-systemet vid omhändertagande av en traumapatient. Ge exempel på hur detta system kan hjälpa till att prioritera åtgärder i en akut situation.', poang:1},
-          {id:'m6q10', typ:'Fritext', text:'Vilken åtgärd är viktigast för att säkerställa fria luftvägar vid akuta tillstånd?\n\nAlternativ: A) Ge smärtlindring  B) Applicera tryckförband  C) Rensa luftvägar och intubera vid behov  D) Övervaka neurologisk status', poang:1},
-          {id:'m6q11', typ:'Fritext', text:'Vilket verktyg används för att behandla en patient med hjärtstopp och ventrikelflimmer?\n\nAlternativ: A) Larynxmask ( I-gel )  B) Ventilationsballong  C) Ultraljud  D) Defibrillator', poang:1},
+          {id:'m6q10', typ:'Flerval', text:'Vilken åtgärd är viktigast för att säkerställa fria luftvägar vid akuta tillstånd?', poang:1, alt:{A:'Ge smärtlindring', B:'Applicera tryckförband', C:'Rensa luftvägar och intubera vid behov', D:'Övervaka neurologisk status'}},
+          {id:'m6q11', typ:'Flerval', text:'Vilket verktyg används för att behandla en patient med hjärtstopp och ventrikelflimmer?', poang:1, alt:{A:'Larynxmask ( I-gel )', B:'Ventilationsballong', C:'Ultraljud', D:'Defibrillator'}},
           {id:'m6q12', typ:'Fritext', text:'Beskriv varför det är viktigt att välja rätt administreringssätt för läkemedel i akutsituationer. Ge exempel på hur olika metoder, som intravenös eller nasalt , kan vara avgörande beroende på patientens tillstånd.', poang:1},
-          {id:'m6q13', typ:'Fritext', text:'Hur många ben består människans skelett av?\n\nAlternativ: A) 206  B) 207  C) 210  D) 212', poang:1},
-          {id:'m6q14', typ:'Fritext', text:'Vilken muskeltyp är viljestyrd?\n\nAlternativ: A) Glatt muskulatur  B) Hjärtmuskulatur  C) Skelettmuskler  D) Kapillärmuskler', poang:1},
-          {id:'m6q15', typ:'Fritext', text:'Vilken kroppsregion innehåller hjärta och lungor?\n\nAlternativ: A) Buk  B) Hals  C) Thorax  D) Bäcken', poang:1},
+          {id:'m6q13', typ:'Flerval', text:'Hur många ben består människans skelett av?', poang:1, alt:{A:'206', B:'207', C:'210', D:'212'}},
+          {id:'m6q14', typ:'Flerval', text:'Vilken muskeltyp är viljestyrd?', poang:1, alt:{A:'Glatt muskulatur', B:'Hjärtmuskulatur', C:'Skelettmuskler', D:'Kapillärmuskler'}},
+          {id:'m6q15', typ:'Flerval', text:'Vilken kroppsregion innehåller hjärta och lungor?', poang:1, alt:{A:'Buk', B:'Hals', C:'Thorax', D:'Bäcken'}},
           {id:'m6q16', typ:'Fritext', text:'Beskriv varför en grundläggande förståelse för kroppens anatomi är viktig vid behandling av skador eller akuta tillstånd. Ge exempel på hur denna kunskap kan användas i praktiken.', poang:1},
-          {id:'m6q17', typ:'Fritext', text:'Vilken av följande funktioner är en del av andningssystemets uppgift?\n\nAlternativ: A) Att transportera blod genom kroppen  B) Att bryta ner näringsämnen  C) Att ta upp syre och avlägsna koldioxid  D) Att producera hormoner', poang:1},
-          {id:'m6q18', typ:'Fritext', text:'Vilket av följande kan vara en orsak till att blodtrycket sjunker vid en akut skada?\n\nAlternativ: A) Ökad syretillförsel  B) Stora vätskeförluster eller blödning  C) Förhöjd kroppstemperatur  D) Ökad muskelaktivitet', poang:1},
-          {id:'m6q19', typ:'Fritext', text:'Vilket av följande är ett exempel på homeostas?\n\nAlternativ: A) Att hjärtat pumpar blod genom kroppen  B) Att kroppen reglerar sin temperatur vid feber  C) Att muskler rör sig vid reflexer  D) Att syre transporteras från lungorna till blodet', poang:1},
+          {id:'m6q17', typ:'Flerval', text:'Vilken av följande funktioner är en del av andningssystemets uppgift?', poang:1, alt:{A:'Att transportera blod genom kroppen', B:'Att bryta ner näringsämnen', C:'Att ta upp syre och avlägsna koldioxid', D:'Att producera hormoner'}},
+          {id:'m6q18', typ:'Flerval', text:'Vilket av följande kan vara en orsak till att blodtrycket sjunker vid en akut skada?', poang:1, alt:{A:'Ökad syretillförsel', B:'Stora vätskeförluster eller blödning', C:'Förhöjd kroppstemperatur', D:'Ökad muskelaktivitet'}},
+          {id:'m6q19', typ:'Flerval', text:'Vilket av följande är ett exempel på homeostas?', poang:1, alt:{A:'Att hjärtat pumpar blod genom kroppen', B:'Att kroppen reglerar sin temperatur vid feber', C:'Att muskler rör sig vid reflexer', D:'Att syre transporteras från lungorna till blodet'}},
           {id:'m6q20', typ:'Fritext', text:'Beskriv hur fysiologiska processer som andning, cirkulation och nervsystemets funktion påverkar kroppens reaktion vid en akut skada eller sjukdom. Hur kan denna kunskap användas för att ge rätt vård?', poang:1},
           {id:'m6q21', typ:'Fritext', text:'Förklara skillnaden mellan farmakokinetik och farmakodynamik.', poang:1},
           {id:'m6q22', typ:'Fritext', text:'Beskriv minst tre läkemedel som används i akutsjukvård och förklara i vilka situationer de används.', poang:1},
-          {id:'m6q23', typ:'Fritext', text:'Vad beskriver termen absorption inom farmakokinetik?\n\nAlternativ: A) Hur snabbt läkemedel bryts ned i levern  B) Hur läkemedel tas upp i blodet  C) Hur läkemedel binder till receptorer  D) Hur läkemedel utsöndras via njurarna', poang:1},
-          {id:'m6q24', typ:'Fritext', text:'Vilket läkemedel används som motgift vid opioidöverdos?\n\nAlternativ: A) Adrenalin  B) Morfin  C) Naloxon  D) Atropin', poang:1},
+          {id:'m6q23', typ:'Flerval', text:'Vad beskriver termen absorption inom farmakokinetik?', poang:1, alt:{A:'Hur snabbt läkemedel bryts ned i levern', B:'Hur läkemedel tas upp i blodet', C:'Hur läkemedel binder till receptorer', D:'Hur läkemedel utsöndras via njurarna'}},
+          {id:'m6q24', typ:'Flerval', text:'Vilket läkemedel används som motgift vid opioidöverdos?', poang:1, alt:{A:'Adrenalin', B:'Morfin', C:'Naloxon', D:'Atropin'}},
           {id:'m6q25', typ:'Fritext', text:'Beskriv skillnader i symptom och behandling mellan hjärtinfarkt, astma/KOL och sepsis.\nFörklara hur varje tillstånd identifieras och vilken akut behandling som är viktigast.', poang:1},
-          {id:'m6q26', typ:'Fritext', text:'Vilket av följande tillstånd misstänks främst när en patient plötsligt får kraftig andnöd, bröstsmärta och normal lungauskultation och där initial behandling inkluderar syrgas och antikoagulantia?\n\nAlternativ: A) Astma  B) Lungemboli  C) KOL-exacerbation  D) Hyperglykemi', poang:1},
+          {id:'m6q26', typ:'Flerval', text:'Vilket av följande tillstånd misstänks främst när en patient plötsligt får kraftig andnöd, bröstsmärta och normal lungauskultation och där initial behandling inkluderar syrgas och antikoagulantia?', poang:1, alt:{A:'Astma', B:'Lungemboli', C:'KOL-exacerbation', D:'Hyperglykemi'}},
           {id:'m6q27', typ:'Fritext', text:'Förklara hur ABCDE-bedömningen används i ambulansmiljö och ge exempel på vad ambulanspersonalen letar efter i varje delsteg.', poang:1},
-          {id:'m6q28', typ:'Fritext', text:'Vilket av följande diagnostiska verktyg används främst för att upptäcka inre blödningar eller lungkollaps?\n\nAlternativ: A) SAT-Mätare  B) LIFEPACKs hjärtövervakning  C) Blodsockermätare  D) Ultraljud', poang:1},
+          {id:'m6q28', typ:'Flerval', text:'Vilket av följande diagnostiska verktyg används främst för att upptäcka inre blödningar eller lungkollaps?', poang:1, alt:{A:'SAT-Mätare', B:'LIFEPACKs hjärtövervakning', C:'Blodsockermätare', D:'Ultraljud'}},
           {id:'m6q29', typ:'Fritext', text:'Beskriv hur diagnostiska verktyg som EKG, POCUS (ultraljud) och mobila blodanalyser hjälper ambulanspersonal att fatta beslut i akuta situationer.', poang:1},
-          {id:'m6q30', typ:'Fritext', text:'Vilken åtgärd är viktigast för att säkerställa fria luftvägar hos en patient med svår andningssvikt i pre-hospital miljö?\n\nAlternativ: A) Administrera antihistaminer  B) Intubera eller använda larynxmask  C) Ge intravenösa vätskor  D) Ta en GCS-bedömning', poang:1},
+          {id:'m6q30', typ:'Flerval', text:'Vilken åtgärd är viktigast för att säkerställa fria luftvägar hos en patient med svår andningssvikt i pre-hospital miljö?', poang:1, alt:{A:'Administrera antihistaminer', B:'Intubera eller använda larynxmask', C:'Ge intravenösa vätskor', D:'Ta en GCS-bedömning'}},
           {id:'m6q31', typ:'Fritext', text:'Scenario för GCS-bedömning\nAmbulansen larmas till en trafikolycka där en ensam förare har kört av vägen och kolliderat med ett träd. När du och din kollega kommer fram sitter patienten kvar i bilen, fastspänd men med ett synligt sår över pannan. Airbagen har lösts ut.\nNär du närmar dig patienten noterar du följande:\nÖgonöppning\nPatienten öppnar inte ögonen spontant.\nNär du tilltalar honom reagerar han inte.\nNär du ger smärtstimulering (t.ex. tryck på sternum) öppnar han ögonen trögt.\nVerbal respons\nPatienten mumlar osammanhängande ord.\nHan verkar försöka svara men det går inte att förstå vad han säger.\nMotoriskt svar\nNär du ger smärtstimulering drar patienten undan armen från smärtkällan och försöker skydda sig.\nHur många GCS-Poäng får PAT?', poang:1, bild:'img/prov/m6q31.jpg'}
         ]}},
       {id:'m7', namn:'Teoriprov – HEMS Crew (Helikopter)', yrkeskategori:'HEMS', niva:'Fördjupningsnivå', tid:40,
@@ -672,33 +689,33 @@ function seed(){
           {id:'m7q3', typ:'Fritext', text:'Varför kan just den skyddade bakrotorn vara extra viktig i en situation där helikoptern behöver lasta patienter medan motorn fortfarande är igång\n( Utveckla för extra poäng)', poang:1},
           {id:'m7q4', typ:'Fritext', text:'Vad skal man göra före flygning?', poang:1},
           {id:'m7q5', typ:'Fritext', text:'Vad är  viktigt under flygning?', poang:1},
-          {id:'m7q6', typ:'Fritext', text:'När får du närma dig helikoptern?\n\nAlternativ: A) När som helst så länge du har bråttom  B) Endast efter pilotens klartecken  C) När patienten är redo', poang:1},
-          {id:'m7q7', typ:'Fritext', text:'Vilken åtgärd ska alltid göras vid in- och urstigning?\n\nAlternativ: A) Gå på den sida som är närmast rotorn  B) In- och urstigning sker på säker sida, bort från rotorer  C) Hoppa direkt på helikopterns lastplan', poang:1},
-          {id:'m7q8', typ:'Fritext', text:'Vad ska göras efter flygning?\n\nAlternativ: A) Rapportera eventuella incidenter och tekniska problem  B) Lämna helikoptern utan kontroll  C) Lämna medicinsk utrustning på golvet för nästa uppdrag', poang:1},
-          {id:'m7q9', typ:'Fritext', text:'Vad är det första du bör göra när en helikopter ska landa?\n\nAlternativ: A) Starta landningen direkt  B) Koordinera med polis/Räddningstjänst om lämplig landningsplats  C) Kontrollera vädret', poang:1},
-          {id:'m7q10', typ:'Fritext', text:'Vilken typ av yta är alltid att föredra vid landning?\n\nAlternativ: A) Mjuk åker på sommaren eller våren  B) Fast mark, t.ex. asfalt  C) Vattendrag eller gräsbevuxen sluttning', poang:1},
-          {id:'m7q11', typ:'Fritext', text:'Om en landningsplats inte kan fastställas nära platsen, vad ska göras?\n\nAlternativ: A) Landa ändå och hoppas på det bästa  B) Landa på en plats längre bort och låt polis eller annan sjukvårdspersonal transportera till HKP om så krävs  C) Flyga runt tills en bättre plats dyker upp', poang:1},
-          {id:'m7q12', typ:'Fritext', text:'Hur många personer bemannar helikoptern vid varje uppdrag?\n\nAlternativ: A) En pilot och två sjukskötererskor  B) Två piloter, en läkare och en narkossjuksköterska  C) En pilot, en läkare ,en sjuksköterska och 1ambulanssjukvårdare', poang:1},
+          {id:'m7q6', typ:'Flerval', text:'När får du närma dig helikoptern?', poang:1, alt:{A:'När som helst så länge du har bråttom', B:'Endast efter pilotens klartecken', C:'När patienten är redo'}},
+          {id:'m7q7', typ:'Flerval', text:'Vilken åtgärd ska alltid göras vid in- och urstigning?', poang:1, alt:{A:'Gå på den sida som är närmast rotorn', B:'In- och urstigning sker på säker sida, bort från rotorer', C:'Hoppa direkt på helikopterns lastplan'}},
+          {id:'m7q8', typ:'Flerval', text:'Vad ska göras efter flygning?', poang:1, alt:{A:'Rapportera eventuella incidenter och tekniska problem', B:'Lämna helikoptern utan kontroll', C:'Lämna medicinsk utrustning på golvet för nästa uppdrag'}},
+          {id:'m7q9', typ:'Flerval', text:'Vad är det första du bör göra när en helikopter ska landa?', poang:1, alt:{A:'Starta landningen direkt', B:'Koordinera med polis/Räddningstjänst om lämplig landningsplats', C:'Kontrollera vädret'}},
+          {id:'m7q10', typ:'Flerval', text:'Vilken typ av yta är alltid att föredra vid landning?', poang:1, alt:{A:'Mjuk åker på sommaren eller våren', B:'Fast mark, t.ex. asfalt', C:'Vattendrag eller gräsbevuxen sluttning'}},
+          {id:'m7q11', typ:'Flerval', text:'Om en landningsplats inte kan fastställas nära platsen, vad ska göras?', poang:1, alt:{A:'Landa ändå och hoppas på det bästa', B:'Landa på en plats längre bort och låt polis eller annan sjukvårdspersonal transportera till HKP om så krävs', C:'Flyga runt tills en bättre plats dyker upp'}},
+          {id:'m7q12', typ:'Flerval', text:'Hur många personer bemannar helikoptern vid varje uppdrag?', poang:1, alt:{A:'En pilot och två sjukskötererskor', B:'Två piloter, en läkare och en narkossjuksköterska', C:'En pilot, en läkare ,en sjuksköterska och 1ambulanssjukvårdare'}},
           {id:'m7q13', typ:'Fritext', text:'Beskriv varför effektiv kommunikation och samarbete mellan piloten och sjukvårdspersonalen är avgörande för både patientvård och säkerhet under en ambulanshelikoptertransport.', poang:1}
         ]}},
       {id:'m8', namn:'Teoriprov – Narkossjuksköterska', yrkeskategori:'Narkossjuksköterska', niva:'Fördjupningsnivå', tid:40,
         beskrivning:'15 frågor hämtade från det riktiga urvalsformuläret. Fritextsvar, rättas manuellt av utbildare.', steg:['Teori','Prov'],
         prov:{godkantGrans:83, maxForsok:3, fragor:[
-          {id:'m8q1', typ:'Fritext', text:'Vad är en narkossjuksköterskas viktigaste uppgift?\n\nAlternativ: A. Att skriva journaler  B. Att säkerställa patientens andning och cirkulation  C. Att ta blodprover  D. Att köra ambulans', poang:1},
-          {id:'m8q2', typ:'Fritext', text:'Vad används sedering till?\n\nAlternativ: A. Att göra patienten piggare  B. Att minska smärta och lugna patienten  C. Att behandla infektioner  D. Att sänka blodsockret', poang:1},
-          {id:'m8q3', typ:'Fritext', text:'Vilket läkemedel används ofta tillsammans med Propofol vid respiratorbehandling?\n\nAlternativ: A. Paracetamol  B. Fentanyl  C. Penicillin  D. Insulin', poang:1},
-          {id:'m8q4', typ:'Fritext', text:'Vad ska alltid bedömas före sedering?\n\nAlternativ: A. Patientens favoritmat  B. ABCDE-bedömning  C. Hårfärg  D. Längd', poang:1},
-          {id:'m8q5', typ:'Fritext', text:'Vad är en bolusdos?\n\nAlternativ: A. Läkemedel som ges långsamt under flera dagar  B. En snabb engångsdos  C. En tablett  D. Syrgasbehandling', poang:1},
-          {id:'m8q6', typ:'Fritext', text:'Vad innebär kontinuerlig infusion?\n\nAlternativ: A. Läkemedel ges hela tiden via pump  B. Läkemedel ges en gång i veckan  C. Läkemedel ges som tabletter  D. Läkemedel ges bara vid behov', poang:1},
-          {id:'m8q7', typ:'Fritext', text:'Vad används en larynxmask till?\n\nAlternativ: A. Att mäta blodtryck  B. Att hålla luftvägen öppen  C. Att ge antibiotika  D. Att ta blodprov', poang:1},
-          {id:'m8q8', typ:'Fritext', text:'Vad används en Ambu-bag till?\n\nAlternativ: A. Att mäta puls  B. Att ventilera patienten  C. Att ge dropp  D. Att kyla patienten', poang:1},
-          {id:'m8q9', typ:'Fritext', text:'Vilken utrustning används för att mäta syremättnad?\n\nAlternativ: A. EKG  B. SpO₂-mätare (pulsoximeter)  C. Blodtrycksmanschett  D. Termometer', poang:1},
-          {id:'m8q10', typ:'Fritext', text:'Vilken patientgrupp har ofta ökad risk för hypotension och delirium?\n\nAlternativ: A. Barn  B. Äldre patienter  C. Tonåringar  D. Friska vuxna', poang:1},
-          {id:'m8q11', typ:'Fritext', text:'Vad betyder PRN?\n\nAlternativ: A. Ges kontinuerligt  B. Ges vid behov  C. Ges bara på natten  D. Ges en gång per vecka', poang:1},
-          {id:'m8q12', typ:'Fritext', text:'Vad är Propofol främst?\n\nAlternativ: A. Antibiotika  B. Sederingsmedel  C. Vätskeersättning  D. Blodförtunnande', poang:1},
-          {id:'m8q13', typ:'Fritext', text:'Vad gör alveolerna i lungorna?\n\nAlternativ: A. Pumpar blod  B. Sköter gasutbyte mellan syre och koldioxid  C. Producerar slem  D. Filtrerar blod', poang:1},
-          {id:'m8q14', typ:'Fritext', text:'Vad är epiglottis uppgift?\n\nAlternativ: A. Mäta syremättnad  B. Hindra mat från att komma ner i luftstrupen  C. Styra hjärtats rytm  D. Producera luft', poang:1},
-          {id:'m8q15', typ:'Fritext', text:'Vilken metod används om luftvägen inte kan säkras och patienten inte kan ventileras (CVCI)?\n\nAlternativ: A. Syrgasgrimma  B. Koniotomi  C. Inhalation  D. Blodtransfusion', poang:1}
+          {id:'m8q1', typ:'Flerval', text:'Vad är en narkossjuksköterskas viktigaste uppgift?', poang:1, alt:{A:'Att skriva journaler', B:'Att säkerställa patientens andning och cirkulation', C:'Att ta blodprover', D:'Att köra ambulans'}},
+          {id:'m8q2', typ:'Flerval', text:'Vad används sedering till?', poang:1, alt:{A:'Att göra patienten piggare', B:'Att minska smärta och lugna patienten', C:'Att behandla infektioner', D:'Att sänka blodsockret'}},
+          {id:'m8q3', typ:'Flerval', text:'Vilket läkemedel används ofta tillsammans med Propofol vid respiratorbehandling?', poang:1, alt:{A:'Paracetamol', B:'Fentanyl', C:'Penicillin', D:'Insulin'}},
+          {id:'m8q4', typ:'Flerval', text:'Vad ska alltid bedömas före sedering?', poang:1, alt:{A:'Patientens favoritmat', B:'ABCDE-bedömning', C:'Hårfärg', D:'Längd'}},
+          {id:'m8q5', typ:'Flerval', text:'Vad är en bolusdos?', poang:1, alt:{A:'Läkemedel som ges långsamt under flera dagar', B:'En snabb engångsdos', C:'En tablett', D:'Syrgasbehandling'}},
+          {id:'m8q6', typ:'Flerval', text:'Vad innebär kontinuerlig infusion?', poang:1, alt:{A:'Läkemedel ges hela tiden via pump', B:'Läkemedel ges en gång i veckan', C:'Läkemedel ges som tabletter', D:'Läkemedel ges bara vid behov'}},
+          {id:'m8q7', typ:'Flerval', text:'Vad används en larynxmask till?', poang:1, alt:{A:'Att mäta blodtryck', B:'Att hålla luftvägen öppen', C:'Att ge antibiotika', D:'Att ta blodprov'}},
+          {id:'m8q8', typ:'Flerval', text:'Vad används en Ambu-bag till?', poang:1, alt:{A:'Att mäta puls', B:'Att ventilera patienten', C:'Att ge dropp', D:'Att kyla patienten'}},
+          {id:'m8q9', typ:'Flerval', text:'Vilken utrustning används för att mäta syremättnad?', poang:1, alt:{A:'EKG', B:'SpO₂-mätare (pulsoximeter)', C:'Blodtrycksmanschett', D:'Termometer'}},
+          {id:'m8q10', typ:'Flerval', text:'Vilken patientgrupp har ofta ökad risk för hypotension och delirium?', poang:1, alt:{A:'Barn', B:'Äldre patienter', C:'Tonåringar', D:'Friska vuxna'}},
+          {id:'m8q11', typ:'Flerval', text:'Vad betyder PRN?', poang:1, alt:{A:'Ges kontinuerligt', B:'Ges vid behov', C:'Ges bara på natten', D:'Ges en gång per vecka'}},
+          {id:'m8q12', typ:'Flerval', text:'Vad är Propofol främst?', poang:1, alt:{A:'Antibiotika', B:'Sederingsmedel', C:'Vätskeersättning', D:'Blodförtunnande'}},
+          {id:'m8q13', typ:'Flerval', text:'Vad gör alveolerna i lungorna?', poang:1, alt:{A:'Pumpar blod', B:'Sköter gasutbyte mellan syre och koldioxid', C:'Producerar slem', D:'Filtrerar blod'}},
+          {id:'m8q14', typ:'Flerval', text:'Vad är epiglottis uppgift?', poang:1, alt:{A:'Mäta syremättnad', B:'Hindra mat från att komma ner i luftstrupen', C:'Styra hjärtats rytm', D:'Producera luft'}},
+          {id:'m8q15', typ:'Flerval', text:'Vilken metod används om luftvägen inte kan säkras och patienten inte kan ventileras (CVCI)?', poang:1, alt:{A:'Syrgasgrimma', B:'Koniotomi', C:'Inhalation', D:'Blodtransfusion'}}
         ]}},
       {id:'m9', namn:'Teoriprov – Övriga kurser', yrkeskategori:'Övriga kurser', niva:'Grundnivå', tid:20,
         beskrivning:'Kort teoriprov för övriga kurser.', steg:['Teori','Prov'],
@@ -1299,6 +1316,10 @@ function crumbLabel(page){
     const es = DB.egnaSidor.find(x=>x.id===page.slice(5));
     return es? es.titel : 'Egen sida';
   }
+  if(page && page.indexOf('ta-prov:')===0){
+    const m = DB.utbildningModuler.find(x=>x.id===page.slice(8));
+    return m? m.namn : 'Prov';
+  }
   return map[page]||page;
 }
 
@@ -1413,6 +1434,7 @@ function renderPage(){
   else if(CURRENT_PAGE==='inskickade-formular') html = pageInskickade();
   else if(CURRENT_PAGE==='anpassa') html = pageAnpassa();
   else if(CURRENT_PAGE && CURRENT_PAGE.indexOf('egen:')===0) html = pageEgenSida(CURRENT_PAGE.slice(5));
+  else if(CURRENT_PAGE && CURRENT_PAGE.indexOf('ta-prov:')===0) html = pageTaProv(CURRENT_PAGE.slice(8));
   else html = '<div class="empty">Sidan hittades inte.</div>';
   c.innerHTML = html + pageFooterHtml();
 }
@@ -2977,7 +2999,8 @@ function renderSkapaProvModal(mid){
         <span class="label">Lägg till fråga</span>
         <div class="field"><span class="label">Frågetyp</span>
           <select id="fqTyp" onchange="renderFqAlt(this.value)">
-            <option value="Flerval">Flerval (A/B/C/D)</option>
+            <option value="Flerval">Flerval (A/B/C/D, ett rätt svar)</option>
+            <option value="Kryssruta">Kryssruta (A/B/C/D, flera rätta svar)</option>
             <option value="Sant/Falskt">Sant/Falskt</option>
             <option value="Fritext">Fritext</option>
           </select>
@@ -3000,6 +3023,13 @@ function renderFqAlt(typ){
       ${['A','B','C','D'].map(l=>`<div class="field" style="display:flex;gap:8px;align-items:center;"><b style="width:14px;">${l}</b><input type="text" id="fqAlt${l}" placeholder="Alternativ ${l}${l==='C'||l==='D'?' (valfritt)':''}"></div>`).join('')}
       <div class="field"><span class="label">Rätt svar</span><select id="fqRatt"><option>A</option><option>B</option><option>C</option><option>D</option></select></div>
     `;
+  } else if(typ==='Kryssruta'){
+    wrap.innerHTML = `
+      <span class="label">Svarsalternativ</span>
+      ${['A','B','C','D'].map(l=>`<div class="field" style="display:flex;gap:8px;align-items:center;"><b style="width:14px;">${l}</b><input type="text" id="fqAlt${l}" placeholder="Alternativ ${l}${l==='C'||l==='D'?' (valfritt)':''}"></div>`).join('')}
+      <div class="hint" style="margin-bottom:10px;">Flera alternativ kan vara rätt — svaret rättas manuellt av admin/utbildare.</div>
+      <input type="hidden" id="fqRatt" value="">
+    `;
   } else if(typ==='Sant/Falskt'){
     wrap.innerHTML = `<div class="field"><span class="label">Rätt svar</span><select id="fqRatt"><option>Sant</option><option>Falskt</option></select></div>`;
   } else {
@@ -3020,7 +3050,7 @@ function addFraga(mid){
   const poang = +document.getElementById('fqPoang').value||1;
   const ratt = document.getElementById('fqRatt').value;
   let alt = null;
-  if(typ==='Flerval') alt = {A:document.getElementById('fqAltA').value,B:document.getElementById('fqAltB').value,C:document.getElementById('fqAltC').value,D:document.getElementById('fqAltD').value};
+  if(typ==='Flerval' || typ==='Kryssruta') alt = {A:document.getElementById('fqAltA').value,B:document.getElementById('fqAltB').value,C:document.getElementById('fqAltC').value,D:document.getElementById('fqAltD').value};
   m.prov.fragor.push({id:uid('q'), typ, text, poang, alt, ratt});
   saveDB(); renderSkapaProvModal(mid); toast('Fråga tillagd');
 }
@@ -3043,44 +3073,71 @@ function requestExam(mid){
 }
 function openTaProv(mid){
   window.__quizState = {mid, idx:0, svar:{}};
-  renderQuizModal();
+  route('ta-prov:'+mid);
 }
-function renderQuizModal(){
-  const {mid, idx} = window.__quizState;
+function avbrytProv(){
+  if(!confirm('Avbryta provet? Dina svar sparas inte.')) return;
+  window.__quizState = null;
+  route('utbildning');
+}
+function toggleKryssSvar(qid, k, checked){
+  if(!Array.isArray(window.__quizState.svar[qid])) window.__quizState.svar[qid] = [];
+  const arr = window.__quizState.svar[qid];
+  const i = arr.indexOf(k);
+  if(checked){ if(i<0) arr.push(k); } else if(i>=0){ arr.splice(i,1); }
+}
+function pageTaProv(mid){
+  if(!window.__quizState || window.__quizState.mid!==mid) window.__quizState = {mid, idx:0, svar:{}};
+  const {idx} = window.__quizState;
   const m = DB.utbildningModuler.find(x=>x.id===mid);
-  const q = m.prov.fragor[idx];
+  if(!m || !m.prov) return `<div class="empty"><b>Provet hittades inte</b></div>`;
   const total = m.prov.fragor.length;
-  if(!q){ return finishQuiz(); }
+  const q = m.prov.fragor[idx];
+  if(!q){ finishQuiz(); return `<div class="empty">Skickar in provet…</div>`; }
   let answerHtml = '';
   if(q.typ==='Flerval'){
     answerHtml = Object.entries(q.alt).filter(([k,v])=>v).map(([k,v])=>`
-      <label style="display:flex;gap:8px;align-items:center;padding:9px 12px;border:1px solid var(--border);border-radius:7px;margin-bottom:7px;cursor:pointer;">
+      <label class="quiz-opt">
         <input type="radio" name="quizAns" value="${k}" ${window.__quizState.svar[q.id]===k?'checked':''} onchange="window.__quizState.svar['${q.id}']='${k}'"><b>${k}</b> ${escapeHtml(v)}
       </label>`).join('');
+  } else if(q.typ==='Kryssruta'){
+    const selected = window.__quizState.svar[q.id] || [];
+    answerHtml = Object.entries(q.alt).filter(([k,v])=>v).map(([k,v])=>`
+      <label class="quiz-opt">
+        <input type="checkbox" value="${k}" ${selected.includes(k)?'checked':''} onchange="toggleKryssSvar('${q.id}','${k}',this.checked)"><b>${k}</b> ${escapeHtml(v)}
+      </label>`).join('') + `<div class="hint">Flera alternativ kan vara rätt — kryssa i alla som stämmer.</div>`;
   } else if(q.typ==='Sant/Falskt'){
     answerHtml = ['Sant','Falskt'].map(v=>`
-      <label style="display:flex;gap:8px;align-items:center;padding:9px 12px;border:1px solid var(--border);border-radius:7px;margin-bottom:7px;cursor:pointer;">
+      <label class="quiz-opt">
         <input type="radio" name="quizAns" value="${v}" ${window.__quizState.svar[q.id]===v?'checked':''} onchange="window.__quizState.svar['${q.id}']='${v}'"> ${v}
       </label>`).join('');
   } else {
-    answerHtml = `<textarea rows="4" placeholder="Skriv ditt svar här..." oninput="window.__quizState.svar['${q.id}']=this.value">${window.__quizState.svar[q.id]||''}</textarea>
+    answerHtml = `<textarea rows="5" placeholder="Skriv ditt svar här..." oninput="window.__quizState.svar['${q.id}']=this.value">${escapeHtml(window.__quizState.svar[q.id]||'')}</textarea>
       <div class="hint">Fritext — rättas manuellt av utbildare.</div>`;
   }
-  openModal(`
-    <div class="modal-head"><h3>${escapeHtml(m.namn)}</h3><button class="modal-close" onclick="closeModal()">✕</button></div>
-    <div class="modal-body">
-      <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--muted);"><span>Fråga ${idx+1} av ${total}</span><span>${q.poang} poäng</span></div>
-      <div class="quiz-progbar"><div style="width:${((idx+1)/total*100).toFixed(0)}%"></div></div>
-      ${q.bild? `<img src="${q.bild}" alt="Bild till frågan" style="max-width:100%;border-radius:8px;margin-bottom:12px;display:block;">` : ''}
-      <b style="display:block;margin-bottom:12px;">${escapeHtml(q.text)}</b>
-      ${answerHtml}
+  const dots = m.prov.fragor.map((qq,i)=>{
+    const answered = qq.typ==='Kryssruta'? (window.__quizState.svar[qq.id]||[]).length>0 : !!window.__quizState.svar[qq.id];
+    const cls = i===idx? 'current' : (answered? 'answered':'');
+    return `<div class="quiz-dot ${cls}" onclick="window.__quizState.idx=${i};renderPage();" title="Fråga ${i+1}">${i+1}</div>`;
+  }).join('');
+  return `
+    <div class="page-head">
+      <div><h1 class="page-title">${escapeHtml(m.namn)}</h1><p class="page-sub">Fråga ${idx+1} av ${total} · ${q.poang} poäng</p></div>
+      <button class="btn btn-danger btn-sm" onclick="avbrytProv()">Avbryt provet</button>
     </div>
-    <div class="modal-foot">
-      <button class="btn" ${idx===0?'disabled':''} onclick="window.__quizState.idx--;renderQuizModal();">← Föregående</button>
-      ${idx<total-1? `<button class="btn btn-primary" onclick="window.__quizState.idx++;renderQuizModal();">Nästa →</button>`
+    <div class="quiz-progbar"><div style="width:${((idx+1)/total*100).toFixed(0)}%"></div></div>
+    <div class="quiz-dots">${dots}</div>
+    <div class="card pad quiz-card">
+      ${q.bild? `<img src="${q.bild}" alt="Bild till frågan" class="quiz-img">` : ''}
+      <b class="quiz-question-text">${escapeHtml(q.text)}</b>
+      <div class="quiz-answers">${answerHtml}</div>
+    </div>
+    <div class="quiz-footer-nav">
+      <button class="btn" ${idx===0?'disabled':''} onclick="window.__quizState.idx--;renderPage();">← Föregående</button>
+      ${idx<total-1? `<button class="btn btn-primary" onclick="window.__quizState.idx++;renderPage();">Nästa →</button>`
         : `<button class="btn btn-green" onclick="finishQuiz();">Lämna in ✓</button>`}
     </div>
-  `);
+  `;
 }
 function finishQuiz(){
   const {mid, svar} = window.__quizState;
@@ -3089,7 +3146,21 @@ function finishQuiz(){
   const fritextsvar = [];
   m.prov.fragor.forEach(q=>{
     maxPoang += q.poang;
-    if(q.typ==='Fritext'){ hasFritext=true; fritextsvar.push({fraga:q.text, svar:svar[q.id]||'', bild:q.bild||null}); return; }
+    if(q.typ==='Fritext' || q.typ==='Kryssruta' || (q.typ==='Flerval' && !q.ratt)){
+      hasFritext=true;
+      let svarText;
+      if(q.typ==='Kryssruta'){
+        const arr = svar[q.id]||[];
+        svarText = arr.length? arr.map(k=>k+') '+((q.alt&&q.alt[k])||'')).join('; ') : '';
+      } else if(q.typ==='Flerval'){
+        const k = svar[q.id];
+        svarText = k? k+') '+((q.alt&&q.alt[k])||'') : '';
+      } else {
+        svarText = svar[q.id]||'';
+      }
+      fritextsvar.push({fraga:q.text, svar:svarText, bild:q.bild||null});
+      return;
+    }
     if(svar[q.id]===q.ratt) poang += q.poang;
   });
   const pct = maxPoang? Math.round(poang/maxPoang*100):0;
@@ -3101,8 +3172,8 @@ function finishQuiz(){
   const lastStepIdx = m.steg.length-1;
   if(godkand && !hasFritext) prog.steg[lastStepIdx] = true;
   saveDB();
-  closeModal();
-  renderPage();
+  window.__quizState = null;
+  route('utbildning');
   toast(hasFritext? 'Prov inlämnat — väntar på manuell rättning' : (godkand? `Godkänt! ${pct}%` : `Ej godkänt (${pct}%)`));
 }
 
